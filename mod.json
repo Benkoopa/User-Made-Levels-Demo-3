@@ -1,0 +1,74 @@
+{
+	"Metadata":
+	{
+		"Name": "User Made Levels Demo 3",
+		"Author": "Benkoopa, check the files for the full credits",
+		"Description": "Third Demo - Play through a good chunk of Sonic 3 AIR again, but this time, with levels made by none other than your fellow peers in the S3 A.I.R. community!",
+		"ModVersion": "0.0.10",
+		"GameVersion": "20.09.10.0"
+	},
+	"Settings":
+    {
+		"List":
+		[
+			{
+				"InternalName": "UMLFangTheme",
+				"DisplayName": "MGZ2: Fang Boss Music",
+				"Variable": "UML.FangTheme",
+				"DefaultValue": "0",
+				"Options":
+				{
+					"0": "Fang's Theme",
+					"1": "Triple Trouble Boss",
+				}
+			},
+			{
+				"InternalName": "UML.BalloonsActAppearances",
+				"DisplayName": "CNZ: BG Balloons:",
+				"Variable": "UML.BalloonsActAppearances",
+				"DefaultValue": "1",
+				"Options":
+				{
+					"0": "Off",
+					"1": "Both Acts",
+					"2": "Act 1 Only",
+					"3": "Act 2 Only",
+				}
+			},
+			{
+				"InternalName": "UMLRedBalloonType",
+				"DisplayName": "CNZ: Cyan BG Balloon Sprite:",
+				"Variable": "UML.RedBalloonType",
+				"DefaultValue": "0",
+				"Options":
+				{
+					"0": "Lighter",
+					"1": "Darker"
+				}
+			},
+			{
+				"InternalName": "UMLSevenForceTheme",
+				"DisplayName": "ICZ: Seven Force Boss Music",
+				"Variable": "UML.SevenForceTheme",
+				"DefaultValue": "0",
+				"Options":
+				{
+					"0": "User Made Levels",
+					"1": "Gunstar Heroes",
+					"2": "Alien Soldier",
+				}
+			},
+			{
+				"InternalName": "UMLSevenForceTriggerTitle",
+				"DisplayName": "ICZ: Seven Force Title Cards",
+				"Variable": "UML.SevenForceTriggerTitle",
+				"DefaultValue": "1",
+				"Options":
+				{
+					"0": "Disabled",
+					"1": "Enabled",
+				}
+			},
+		],
+	},
+}

@@ -1,0 +1,85 @@
+Benkoopa:
+	Director
+	Mod Compiler
+	Designer - Angel Island Zone 1A
+
+Lave siime:
+	SonLVL Assistance
+
+boblesponge:
+	Original Idea
+
+Ostamae:
+	Designer - Hydrocity Zone 1
+
+kojimkj:
+	Designer - Hydrocity Zone 2
+
+MyDude:
+	Scripting Assistance
+	Designer - Marble Garden Zone 1
+	Designer - Sandopolis Zone 1 Boss
+
+SyntaxTsundere:
+	Zone Design Curator
+	Zone Design Assistance
+	Designer - Marble Garden Zone 2
+
+SAMPL:
+	Designer - Carnival Night Zone 1
+	
+Cancer Edition:
+	Artist - Fang The Sniper
+	
+Anonite:
+	Composer - Fang The Sniper's Theme (originally from Sonic Triple Trouble 16-Bit)
+	
+Noah N. Copeland:
+	Composer - Sonic Triple Trouble 16-Bit Major Boss Theme
+	
+Kamijojo:
+	Artist - Foreground Fang The Sniper Sprites
+
+Zvdree-Official:
+	Designer - IceCap Zone
+	
+mercenarioJT:
+	Scripting Assistance (Ice Cap Zone Platforms)
+
+blu32x:
+	Designer - Marble Garden Zone 2 Boss (Fang The Sniper)
+	Designer - IceCap Zone Boss (Seven Force)
+	
+LunarCryptikk:
+	Composer - Seven Force (User Made Levels Remix)
+	Composer - render_flag.FLIP_X
+
+Flamesz:
+	Designer - Flying Battery Zone 1
+	Base Mod
+
+Dyanmic Lemons:
+	Scripting Assistance
+	Scripting Cleanup
+	Script Curator
+	
+Shaded:
+	Designer - Sandopolis Zone 1
+	
+Spring2008:
+	Designer - Sandopolis Zone 2
+	
+Raf:
+	Artist - Chiba Ayumi Cameo
+	
+Glitchy 8:
+	Owner - Chiba Ayumi
+
+Hazel:
+	Scripting Assistance
+
+Legobouwer9:
+	Rawdata Assistance
+	
+Albert Einstein:
+	Legal owner of the Triangle
