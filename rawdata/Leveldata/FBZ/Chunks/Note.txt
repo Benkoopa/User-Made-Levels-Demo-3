@@ -1,0 +1,3 @@
+Do NOT edit this chunk file without decompressing it and recompressing it using FW-KENSC;
+Doing so without recompressing will cause the file to exceed the maximum 11,888 bytes,
+And overwrite part of MHZ's Block Data!

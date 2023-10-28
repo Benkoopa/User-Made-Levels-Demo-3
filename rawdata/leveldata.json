@@ -1,0 +1,38 @@
+{
+		"aiz1_layout": { "File": "../rawdata/Leveldata/AIZ/Layout/1.bin" },		//Benkoopa
+ 		"aiz1_objects": { "File": "../rawdata/Leveldata/AIZ/Object Pos/1.bin" }, 
+ 		"aiz1_rings": { "File": "../rawdata/Leveldata/AIZ/Ring Pos/1.bin"},
+		"hcz1_layout": { "File": "../rawdata/Leveldata/HCZ/Layout/1.bin" }, 	//Ostamae
+ 		"hcz1_objects": { "File": "../rawdata/Leveldata/HCZ/Object Pos/1.bin" }, 
+ 		"hcz1_rings": { "File": "../rawdata/Leveldata/HCZ/Ring Pos/1.bin"},
+		"hcz2_layout": { "File": "../rawdata/Leveldata/HCZ/Layout/2.bin" }, 	//Kojimkj
+ 		"hcz2_objects": { "File": "../rawdata/Leveldata/HCZ/Object Pos/2.bin" }, 
+ 		"hcz2_rings": { "File": "../rawdata/Leveldata/HCZ/Ring Pos/2.bin"},
+		"mgz1_layout":  { "File": "../rawdata/Leveldata/MGZ/Layout/1.bin" },	//MyDude
+		"mgz1_objects": { "File": "../rawdata/Leveldata/MGZ/Object Pos/1.bin" },
+		"mgz1_rings":   { "File": "../rawdata/Leveldata/MGZ/Ring Pos/1.bin" },
+		"mgz2_layout":  { "File": "../rawdata/Leveldata/MGZ/Layout/2.bin" },	//SyntaxTsundere
+		"mgz2_objects":  { "File": "../rawdata/Leveldata/MGZ/Object Pos/2.bin" },
+		"mgz2_rings":  { "File": "../rawdata/Leveldata/MGZ/Ring Pos/2.bin" },
+		"cnz1_layout":  { "File": "../rawdata/Leveldata/CNZ/Layout/1.bin" },	//SAMPL
+		"cnz1_objects":  { "File": "../rawdata/Leveldata/CNZ/Object Pos/1.bin" },
+		"cnz1_rings":  { "File": "../rawdata/Leveldata/CNZ/Ring Pos/1.bin" },
+  		"fbz1_layout": { "File": "../rawdata/Leveldata/FBZ/Layout/1.bin" },		//Flamez
+  		"fbz1_objects": { "File": "../rawdata/Leveldata/FBZ/Object Pos/1.bin" },
+  		"fbz1_rings": { "File": "../rawdata/Leveldata/FBZ/Ring Pos/1.bin" },
+ 		"icz1_layout":  { "File": "../rawdata/Leveldata/ICZ/Layout/1.bin" },	//Zvdree
+  		"icz1_objects":  { "File": "../rawdata/Leveldata/ICZ/Object Pos/1.bin" },
+  		"icz1_rings":  { "File": "../rawdata/Leveldata/ICZ/Ring Pos/1.bin" },
+ 		"icz2_layout":  { "File": "../rawdata/Leveldata/ICZ/Layout/2.bin" },	//SyntaxTsundere (Very small; the rest of the act is a boss by Blue)
+  		"icz2_objects":  { "File": "../rawdata/Leveldata/ICZ/Object Pos/2.bin" },
+  		"icz2_rings":  { "File": "../rawdata/Leveldata/ICZ/Ring Pos/2.bin" },
+		"soz1_layout": { "File": "../rawdata/Leveldata/SOZ/Layout/1.bin" },	 //Shaded
+		"soz1_objects":{ "File": "../rawdata/Leveldata/SOZ/Object Pos/1.bin" },
+		"soz1_rings":  { "File": "../rawdata/Leveldata/SOZ/Ring Pos/1.bin" },
+		"soz2_layout": { "File": "../rawdata/Leveldata/SOZ/Layout/2.bin" },	 //Spring2008
+		"soz2_objects":{ "File": "../rawdata/Leveldata/SOZ/Object Pos/2.bin" },
+		"soz2_rings":  { "File": "../rawdata/Leveldata/SOZ/Ring Pos/2.bin" },
+  		"hpz1_layout": { "File": "../rawdata/Leveldata/LRZ/Layout/3.bin" },		//Stardust (Actually LRZ3, not HPZ1)
+  		"hpz1_objects": { "File": "../rawdata/Leveldata/LRZ/Object Pos/3.bin" },
+  		"hpz1_rings": { "File": "../rawdata/Leveldata/LRZ/Ring Pos/3.bin" }
+}

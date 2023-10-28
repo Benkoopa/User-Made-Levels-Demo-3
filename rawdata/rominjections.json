@@ -1,0 +1,145 @@
+{
+	"Bubble object":
+	{
+		"File":	"bubble.bin",
+		"RomInject":	"0x9521b",
+	},
+	
+	"AIZ1LevelChunks":
+	{
+		"File":	"Leveldata/AIZ/Chunks/Act 1.bin",
+		"RomInject":	"0x3abc40",
+	},
+	
+	"AIZ1LevelPal":
+	{
+		"File":	"Leveldata/AIZ/Palette/Main.bin",
+		"RomInject":	"0x0a8b7c",
+	},
+	
+   	"HCZ1LevelPal":
+	{
+     	"File":	"Leveldata/HCZ/Palettes/1.bin",
+     	"RomInject":	"0xa8d9c",
+   	},
+	
+	"HCZ1WaterPal":
+	{
+     	"File":	"Leveldata/HCZ/Palettes/Act 1 Water.bin",
+      	"RomInject":	"0xa8e5c",
+	},
+
+	"MGZLevelPal":
+	{
+		"File":	"Leveldata/MGZ/Palettes/Main.bin",
+		"RomInject":	"0xa8f5c",
+	},
+	
+	"MGZCNZTransitionPal":
+	{
+		"File":	"Leveldata/MGZ/Palettes/Transition.bin",
+		"RomInject":	"0x364896",
+	},
+
+	"CNZLevelPal":
+	{
+		"File":	"Leveldata/CNZ/Palettes/Main.bin",
+		"RomInject":	"0xa8fbc",
+	},
+	
+	"CNZWaterPal":
+	{
+		"File":	"Leveldata/CNZ/Palettes/Water.bin",
+		"RomInject":	"0xa901c",
+	},
+	
+	"CNZFlashPal":
+	{
+		"File":	"Leveldata/CNZ/Palettes/Flash.bin",
+		"RomInject":	"0x66932",
+	},
+	
+	"CNZ1LevelSize":
+	{
+		"File":	"Leveldata/CNZ/Layout/1_LevelSize.bin",
+		"RomInject":	"0x1bcf6",
+	},
+	
+	//Double executive decision; FBZ1 shall not have a unique palette for UML's demo. ~Syntax
+	//"FBZ1LevelPal":	//Executive decision; the FBZ1 Level Palette is purple again. ~Syntax
+	//{
+	//	"File":	"Leveldata/FBZ/Palettes/FBZ1.bin",
+	//	"RomInject":	"0xa909c",
+	//},
+	
+	"FBZ1Chunks":
+	{
+		"File":	"Leveldata/FBZ/Chunks/Act 1.bin",
+		"RomInject":	"0x1974a2",
+	},
+	
+	"ZZZ_FBZ2Chunks":	//No RomInject for this, as the reading of this file is handled seperately.
+	{
+		"File":	"Leveldata/FBZ/Chunks/Act 2.bin",
+	},
+	
+	"ICZ1LevelPal":
+	{
+		"File":	"Leveldata/ICZ/Palettes/1.bin",
+		"RomInject":	"0xa915c",
+	},
+	
+	"ICZLevelChunks":
+	{
+		"File":	"Leveldata/ICZ/Chunks/Primary.bin",
+		"RomInject":	"0x3d56a8",
+	},
+	
+	"ICZ1LevelChunks":
+	{
+		"File":	"Leveldata/ICZ/Chunks/Act 1 Secondary.bin",
+		"RomInject":	"0x3d844a",
+	},
+	
+	"ICZ2LevelPal":	
+	{ 
+		"File":	"Leveldata/ICZ/Palettes/2.bin",
+		"RomInject":	"0xa91bc",
+	},
+	
+	"ICZ2LevelChunks":
+	{
+		"File":	"Leveldata/ICZ/Chunks/Act 2 Secondary.bin",
+		"RomInject":	"0x3dcfbc",
+	},
+	
+	"LBZ1LevelPal":
+	{
+		"File":	"Leveldata/LBZ/Palettes/1.bin",
+		"RomInject":	"0xa929c",
+	},
+
+	"SOZSandSlideRotPal":
+	{
+		"File":	"Leveldata/SOZ/Palettes/SandSlide_RotPal.bin",
+		"RomInject":	"0x30da",
+	},
+	
+	"SOZ1LevelPal":
+	{
+		"File":	"Leveldata/SOZ/Palettes/1.bin",
+		"RomInject":	"0xa94fc",
+	},
+	
+	"SOZ2SonicStart":
+	{
+		"File":	"Leveldata/SOZ/Start Location/Sonic/2.bin",
+		"RomInject":	"0x1e3c5c",
+	},
+	
+	"SOZ2KnucklesStart":
+	{
+		"File":	"Leveldata/SOZ/Start Location/Knuckles/2.bin",
+		"RomInject":	"0x1e3d1c",
+	}
+}
