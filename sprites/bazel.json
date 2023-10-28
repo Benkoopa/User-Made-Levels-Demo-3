@@ -1,0 +1,5 @@
+{
+	"bazel_0x00":  { "File": "bazel.png", "Rect": "0,0,16,16", "Center": "8,8" },
+	"bazel_0x01":  { "File": "bazel.png", "Rect": "19,0,16,16", "Center": "8,8" },
+	"endoftheworld":  { "File": "bazel.png", "Rect": "0,18,496,57", "Center": "0,0" }
+}

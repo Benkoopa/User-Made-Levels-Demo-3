@@ -1,0 +1,4 @@
+{
+	"hud_flash_white": { "File": "Flash.png", "Rect": "0,0,496,224",  "Center": "248,0" },
+	"hud_flash_black": { "File": "Flash.png", "Rect": "0,224,496,224",  "Center": "248,0" },
+}
