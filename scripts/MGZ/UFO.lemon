@@ -1,0 +1,34 @@
+function void update.UFO()
+{
+	A1 = 0xffffb000
+	CheckDistanceToObjectA1()
+	
+	u16 distance.coeff = 80
+
+	u64 distance = sqrt(D2.u16*D2.u16 + D3.u16*D3.u16)
+	
+	if distance < distance.coeff && D2.u16 < getScreenWidth() / 2 && D3.u16 < getScreenHeight() / 2
+	{
+		if objA0.base_state == 0x00
+			playSound(0x74)
+		objA0.base_state = 0x02
+		objA0.velocity.x += D0 ? -128 : 128
+	}
+	else
+		objA0.velocity.x = objA0.velocity.x - objA0.velocity.x / 32
+	
+	if objA0.base_state == 0x02 && D3.u16 > getScreenHeight()
+		UnloadObject()
+	
+	if objA0.base_state == 0x02
+	{
+		objA0.velocity.y -= 32
+	}
+	else
+	{
+		objA0.velocity.x == 0
+		objA0.velocity.y == 0
+	}
+	
+	UpdateMovementStraightSimple()
+}

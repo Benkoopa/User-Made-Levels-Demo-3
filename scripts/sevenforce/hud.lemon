@@ -1,0 +1,76 @@
+function void RenderSevenForceHUD()
+{
+    if SevenForce.Phase > 3
+    {
+        Renderer.drawCustomSprite("hud_flash_white", getScreenWidth() / 2, 0, 0, SPRITE_FLAG_PRIO | SPRITE_FLAG_NO_GLOBAL_TINT, 0x5500, 0, SevenForce.FlashOpacity)
+        Renderer.drawCustomSprite("hud_flash_black", getScreenWidth() / 2, 0, 0, SPRITE_FLAG_PRIO | SPRITE_FLAG_NO_GLOBAL_TINT, 0x5500, 0, SevenForce.FlashOpacity)
+    }
+    else
+    {
+        Renderer.drawCustomSprite("hud_flash_white", getScreenWidth() / 2, 0, 0, SPRITE_FLAG_PRIO | SPRITE_FLAG_NO_GLOBAL_TINT, 0x1500, 0, SevenForce.FlashOpacity)
+        Renderer.drawCustomSprite("hud_flash_black", getScreenWidth() / 2, 0, 0, SPRITE_FLAG_PRIO | SPRITE_FLAG_NO_GLOBAL_TINT, 0x1500, 0, SevenForce.FlashOpacity)
+    }
+
+    Renderer.drawCustomSprite("hud_flash_white", getScreenWidth() / 2, 0, 0, SPRITE_FLAG_PRIO | SPRITE_FLAG_NO_GLOBAL_TINT, 0xcccc, 0, SevenForce.FinalFlashOpacity)
+    Renderer.drawCustomSprite("hud_flash_black", getScreenWidth() / 2, 0, 0, SPRITE_FLAG_PRIO | SPRITE_FLAG_NO_GLOBAL_TINT, 0xcccc, 0, SevenForce.FinalFlashOpacity)
+
+    if SevenForce.FlashOpacity
+    {
+        SevenForce.FlashOpacity--
+        global.level_started = -0x7f
+
+        if SevenForce.FlashOpacity < 32
+            FadeInPalette()
+    }
+
+    if SevenForce.FinalFlashOpacity
+    {
+        SevenForce.FinalFlashOpacity--
+        global.level_started = -0x7f
+    }
+
+    if level.boss_encounter
+    {
+        Game.setDiscordState("User Made Levels - Seven Force")
+    }
+
+    if SevenForce.Defeated
+    {
+        playSoundRepeatedly(0xce)
+        global.level_started = -0x7f
+    }
+
+    if SevenForce.WarningFrame > 1
+        SevenForce.WarningFrame = 0
+    else if ((level.framecounter.low & 0x0f) == 0)
+        SevenForce.WarningFrame++
+
+    if SevenForce.WarningTimer
+    {
+        SevenForce.WarningTimer--
+
+        if SevenForce.WarningTimer == 200 && (Mods.isModActive("SAWNIC & SLUDGLES") || Mods.isModActive("Sawnic"))
+        {
+            level.boss_encounter = 1
+            System.callFunctionByName("DoBossWarning")
+        }
+
+        if !(Mods.isModActive("SAWNIC & SLUDGLES") || Mods.isModActive("Sawnic"))
+            Renderer.drawCustomSprite(stringformat("Gunstar_Warning_%d", SevenForce.WarningFrame), getScreenWidth() / 2, getScreenHeight() / 2, 0, SPRITE_FLAG_PRIO | SPRITE_FLAG_NO_GLOBAL_TINT, 0xcccc, 0, 255)
+    }
+
+    if SevenForce.TriggerTitleTimer
+        RenderSevenForceTitleCard()
+}
+
+//# address-hook(0x01c11e) end(0x01c236)
+//function void UpdateCameraPositionY()
+//{
+//if !(global.zone_act.apparent == 0x0501 && level.boss_encounter == 1 && SevenForce.WarningTimer <= 200)
+//	{
+//		base.UpdateCameraPositionY()
+//		return
+//	}
+//}
+
+global u16 SevenForce.PlatformOffset

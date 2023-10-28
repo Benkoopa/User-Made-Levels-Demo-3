@@ -1,0 +1,78 @@
+global u8 UML.RedBalloonType
+global u8 UML.BalloonsActAppearances
+
+//# address-hook(0x051b9c) end(0x051c6a)
+function void UpdateLevelTiles.CNZ1()
+{
+	if (UML.BalloonsActAppearances == 1 || UML.BalloonsActAppearances == 2)
+	  CNZRenderBalloons()
+	base.UpdateLevelTiles.CNZ1()
+}
+
+//# address-hook(0x052110) end(0x05214a)
+function void UpdateLevelTiles.CNZ2()
+{
+	if (UML.BalloonsActAppearances == 1 || UML.BalloonsActAppearances == 3)
+	  CNZRenderBalloons()
+	base.UpdateLevelTiles.CNZ2()
+}
+
+function void CNZRenderBalloons()
+{
+	u16 px = ((getScreenWidth() - camera.position.x.u16) / 2) + (level.framecounter)
+	u16 py = -(level.framecounter)
+	for (u16 i = 0; i < 0x09; ++i)
+	{
+		u16 npy = py - psuedorandom(i)
+		u16 npx = px - (npy - (npy % (getScreenHeight() + 0x10))) * psuedorandom(i * 3)
+		npy %= getScreenHeight() + 0x10
+		npx %= getScreenWidth()
+		
+		u16 renderqueue = 0x1000
+		
+		u8 Balloon_Anim = (level.framecounter >> 3) % 4
+		
+		u8 Balloon_type = psuedorandom(i) % 5
+		u64 key
+		if (Balloon_type == 0) //Player
+			key = stringformat("Balloon_Player_%d", Balloon_Anim)
+        if (Balloon_type == 1) //Blue
+			key = stringformat("Balloon_Blue_%d", Balloon_Anim)
+        if (Balloon_type == 2) //Yellow
+			key = stringformat("Balloon_Yellow_%d", Balloon_Anim)
+        if (Balloon_type == 3) //Black
+			key = stringformat("Balloon_Black_%d", Balloon_Anim)
+		if (Balloon_type == 4) //Red (Well, it was red once)
+		  {
+           if UML.RedBalloonType == 1
+			key = stringformat("Balloon_Red_%d", Balloon_Anim)
+		   else
+			key = stringformat("Balloon_RedBase_%d", Balloon_Anim)
+		  }
+		
+		if (Renderer.hasCustomSprite(key))
+			Renderer.drawSpriteTinted(key, npx, npy, 0x00, SPRITE_FLAG_PRIO, renderqueue, 0, 0x777777ff, 0x10000)
+	}
+}
+
+function u16 psuedorandom(u8 input)
+{
+	input += 3
+	u32 v1 = input
+	u32 v0 = v1
+	for (u16 i = 0; i < input; ++i)
+	{
+		if (u16(v1) == 0)
+			v1 = 0x2a6d365b
+		v1 <<= 2
+		v1 += v0
+		v1 <<= 3
+		v1 += v0
+		v0 = u16(v1)
+		v1 = (v1 << 16) + (v1 >> 16)
+		v0 += u16(v1)
+		v1 = u16(v0)
+		v1 = (v1 << 16) + (v1 >> 16)
+	}
+	return v1 >> 16
+}

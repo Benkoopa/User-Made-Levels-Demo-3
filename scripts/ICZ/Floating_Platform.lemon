@@ -1,0 +1,14 @@
+function bool Standalone.onWriteToSpriteTable(s16 px, s16 py, u16 renderQueue)
+{
+
+
+	//floating Platform
+			if (global.zone_act == 0x0500) || (global.zone_act == 0x0501)
+	if (objA0.update_address == 0x0255f4)
+	{
+	    Renderer.drawCustomSprite("floating_Platform_ICZ", px, py, 0x00, 0, renderQueue, 255, 255)
+	    return true
+    }
+
+	return base.Standalone.onWriteToSpriteTable(px, py, renderQueue)
+}

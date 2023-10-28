@@ -1,0 +1,82 @@
+global u8 UML.SevenForceTriggerTitle
+global u8 SevenForce.TriggerTitleTimer
+global bool SevenForce.TriggerTitleActive
+
+//# address-hook(0x01aada) end(0x01ab18)
+function void UpdateGameObjects()
+{
+	if !(global.zone_act.apparent == 0x0501 && level.boss_encounter == 1)
+	{
+		base.UpdateGameObjects()
+		return
+	}
+#if !STANDALONE
+	// This check is effectively dead code
+	if (unused.teleport_active != 0)
+		return
+#endif
+
+	A0 = 0xffffb000
+	if SevenForce.TriggerTitleTimer
+	{
+		updateGameObjectLoop()
+
+		// 0xffffb128...0xffffcb2b
+		//  -> 90 normal game objects, these just get rendered here
+		D7 = 0x59
+		updateGameObjectLoopRenderOnly()
+
+		// 0xffffcb2c...0xffffcfcb
+		//  -> 16 last game objects (see defines_global.lemon)
+		D7 = 0x0f
+		updateGameObjectLoop()
+
+		SevenForce.TriggerTitleTimer--
+
+        global.level_started = -0x7f
+	}
+	else if (competition_mode.active == 0 && char.base_state >= 0x06 && char.base_state != 0x0c)
+	{
+		// Special case: Main character just died
+
+		// 0xffffb000...0xffffb127
+		//  -> First 4 game objects, especially the 2 characters
+		D7 = 0x03
+		updateGameObjectLoop()
+
+		// 0xffffb128...0xffffcb2b
+		//  -> 90 normal game objects, these just get rendered here
+		D7 = 0x59
+		updateGameObjectLoopRenderOnly()
+
+		// 0xffffcb2c...0xffffcfcb
+		//  -> 16 last game objects (see defines_global.lemon)
+		D7 = 0x0f
+		updateGameObjectLoop()
+	}
+	else
+	{
+		// Go through all 110 object slots without special handling
+		D7 = 0x6d
+		updateGameObjectLoop()
+	}
+}
+
+function void RenderSevenForceTitleCard()
+{
+	Renderer.drawCustomSprite(stringformat("Trigger_Title_JPN_%d", SevenForce.Phase), getScreenWidth() / 2, getScreenHeight() / 2, 0, SPRITE_FLAG_PRIO, 0x4507, -20, 255)
+    Renderer.drawCustomSprite(stringformat("Trigger_Title_%d", SevenForce.Phase), getScreenWidth() / 2, getScreenHeight() / 2 - 50, 0, SPRITE_FLAG_PRIO, 0x4507, 0, 255)
+    Renderer.drawCustomSprite("Trigger_Title_Force", getScreenWidth() / 2, getScreenHeight() / 2 + 50, 0, SPRITE_FLAG_PRIO, 0x4507, 0, 255)
+
+    Renderer.drawCustomSprite("Trigger_Title_BG", getScreenWidth() / 2, getScreenHeight() / 2, 0, SPRITE_FLAG_PRIO, 0x4507, 0, 255)
+}
+
+function void SevenForce.StudioTriggerMoment()
+{
+    if SevenForce.TriggerTitleActive || !UML.SevenForceTriggerTitle || SevenForce.FlashOpacity
+        return
+    
+    SevenForce.TriggerTitleActive = true
+    SevenForce.TriggerTitleTimer = 90
+    Audio.playAudio("gsh_roll", AudioContext.CONTEXT_SOUND)
+}

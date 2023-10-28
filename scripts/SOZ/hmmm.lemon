@@ -1,0 +1,258 @@
+global u8 UML.bengoomba.health
+global u8 UML.bengoomba.invuln
+
+function bool isAgentStone()
+{
+	if	(Mods.isModActive("Stone 3 A.I.R."))
+	{
+		//if (isMainCharacter(CHARACTER_KNUCKLES) && u8[0xffffe654] == 0)
+			//return true
+		//else if (u8[0xffffe654] == 1)
+			return true
+	}
+	return false
+}
+
+//# address-hook(0x076a92) end(0x076aa8)
+function void fn076a92()
+{
+	//First things first - Don't fight Bengoomba if Agent Stone is on. Preferably, this would work in the way which Bengoomba would be fought if you are ineligible for Stone Buggy, but... well. It is how it is.
+	if (isAgentStone())
+	{
+		base.fn076a92()	//Then do so.
+	}
+	else
+	{
+		// Called addresses:
+		//  - 0x076ac8	-> objA0.base_state = 0x00	-> Initialization
+		//  - 0x076b2a	-> objA0.base_state = 0x02	-> Appearing in pyramid door
+		//  - 0x076b44	-> objA0.base_state = 0x04	-> Shenanigans
+		call tableLookupAddress(0x076aae, objA0.base_state)
+
+		fn0772f6()
+		fn0770ea()
+		Enemy.DrawDynamicObject()
+		if UML.bengoomba.invuln > 0
+		--UML.bengoomba.invuln
+	}
+}
+
+
+//# address-hook(0x076ac8) end(0x076b28)
+function void fn076ac8()
+{
+	if (isAgentStone())
+	{
+		base.fn076ac8()
+	}
+	else
+	{
+		setupObjectAttributesFull(0x0773ac)
+
+		u16[A0 + 0x3c] = objA0.sprite_priority
+		objA0.hitbox_extends.y = 0x3b
+		objA0.countdown_callback = 0x076b30
+
+		playMusic(MUSIC_MINIBOSS_2)
+		level.default_music.u8 = MUSIC_MINIBOSS_2
+
+		objA0.countdown_value = 0x3f
+		objA0.countdown_callback = 0x076b30
+		
+		UML.bengoomba.health = 3
+	}
+}
+
+//# address-hook(0x076b30) end(0x076b3e)
+function void fn076b30()
+{
+	if (isAgentStone())
+	{
+		base.fn076b30()
+	}
+	else
+	{
+		objA0.base_state = 0x04
+		u8[0xffffeed4] = 0xff
+
+		CheckDistanceToPlayers()
+		if D0
+			objA0.velocity.x = 0xa0
+		else
+			objA0.velocity.x = -0xa0
+		objA0.velocity.y = 0
+	}
+}
+
+//# address-hook(0x076b44) end(0x076b7a)
+function void fn076b44()
+{
+	if (isAgentStone())
+	{
+		base.fn076b44()
+	}
+	else
+	{
+		if objA0.position.x.u16 >= 0x4438
+			objA0.velocity.x = -0xa0
+		if objA0.position.x.u16 > 0x4200
+			UpdateMovementStraightSimple()
+		else
+		{
+			BossSOZ1.slideAsRock()
+			objA0.velocity.x = -0xa0
+		}
+		A1 = 0xffffb000
+		if objA1.flags2a & char.flag.IN_AIR
+		objA0.collision_attributes = (collision.flag.SPECIAL | collision.size.16x16)
+		else
+		objA0.collision_attributes = (collision.flag.THREAT | collision.size.16x16)
+		fn076fa6()
+	}
+}
+
+//# address-hook(0x076fa6) end(0x076ff8)
+function void fn076fa6()
+{
+	if (isAgentStone())
+	{
+		base.fn076fa6()
+	}
+	else
+	{
+		fn085870()
+		if (_equal())
+			return
+		fn0857c2()
+		if (_equal())
+		{
+			if (u8[A1 + 0x34] == 0)
+			{
+				Enemy.DamageCharacter()
+			}
+			return
+		}
+		if UML.bengoomba.invuln != 0
+		return
+		if UML.bengoomba.health > 0
+		{
+			--UML.bengoomba.health
+			UML.bengoomba.invuln = 10
+			playSound(0x6e)
+		}
+
+		objA1.velocity.x = -objA1.velocity.x
+		objA1.velocity.y = -objA1.velocity.y
+		objA1.groundspeed = -objA1.groundspeed
+
+		objA0.base_state = 0x08
+		u32[A0 + 0x30] = 0x077495
+		objA0.countdown_callback = 0x076ffa
+
+		A2 = 0xffff0000 + u16[A0 + 0x46]
+		u16[A2 + 0x44] = A1.u16
+		u8[A2 + 0x2a] |= 0x40
+		u8[A2 + 0x38] |= 0x80
+	}
+}
+
+//# address-hook(0x0772f6) end(0x0773aa)
+function void fn0772f6()
+{
+	if (isAgentStone())
+	{
+		base.fn0772f6()
+	}
+	else
+	{
+		if (objA0.position.y.u16 < 0x0a10) && UML.bengoomba.health > 0
+		{
+			if ((objA0.flags2a & 0x40) == 0)
+				return
+			if ((objA0.flags38 & 0x80) == 0)
+				return
+
+			objA0.flags38 &= ~0x80
+			objA0.base_state = 0x0c
+
+			objA0.countdown_callback = 0x076ca2
+			objA0.hitbox_extends.y = 0x08
+			objA0.animation.sprite = 0
+			objA0.animation.frame = 0
+			objA0.animation.timer = 0
+			objA0.value3a = 0
+			objA0.value39 = 0
+
+			playSound(SFX_COLLAPSE)
+
+			A1 = 0xffff0000 + u16[A0 + 0x44]
+		#if STANDALONE
+			objA0.velocity.x = (objA1.position.x.u16 >= objA0.position.x.u16) ? -0x2c0 : 0x2c0
+		#else
+			objA0.velocity.x = (objA1.position.x.u16 >= objA0.position.x.u16) ? -0x200 : 0x200
+		#endif
+			objA0.velocity.y = -0x200
+		}
+		else
+		{
+			playMusic(MUSIC_CTRL_STOP)
+			objA0.update_address = 0x076e0a
+			objA0.velocity.x = 0
+			objA0.velocity.y = 0x40
+			objA0.countdown_value = 0xbf
+			hud.dirty.timer = 0
+			screenmover_target.left = move_area.left
+			screenmover_target.right = move_area.right
+			move_area.left = camera.position.x.u16
+			move_area.right = camera.position.x.u16 + getScreenExtend() * 2
+
+			// "spawnSimpleChildObjects(0x083fee)" replaced by:
+			spawnSimpleChildObjects(0x083d84, 1)		// Boss explosion generator
+			if (_equal())
+			{
+				u8[A1 + 0x2c] = 0x04
+			}
+			spawnChildObject(0x068e98, 0x00, -16, -8)
+			spawnChildObject(0x068e98, 0x02, 12, -16)
+		}
+	}
+}
+
+function bool Standalone.onWriteToSpriteTable(s16 px, s16 py, u16 renderQueue)
+{
+	if (objA0.update_address == 0x076a92 && !isAgentStone())
+	{
+		if UML.bengoomba.invuln & 1
+			return true
+		u64 key = "BenGoomba_%x"
+		key = stringformat(key, (level.framecounter >> 4) & 1)
+		
+		u16 transparency = clamp(255 - (objA0.countdown_value << 2), 0, 255)
+		transparency = objA0.base_state == 0x02 ? transparency : 255
+		
+		Renderer.drawSprite(key, px, py - 3, 0x00, SPRITE_FLAG_PRIO, renderQueue, 0, transparency)
+		
+		key = "BenGoomba_Hat"
+		Renderer.drawSprite(key, px, py - 0x17, 0x00, SPRITE_FLAG_PRIO, renderQueue + 1, 0, transparency)
+		return true
+	}
+	
+	if (objA0.update_address == 0x076e0a && !isAgentStone())
+	{
+		u64 key = "BenGoomba_2"
+		key = stringformat(key, (level.framecounter >> 4) & 1)
+		
+		u16 transparency = 255
+		Renderer.drawSprite(key, px, py - 3, 0x00, SPRITE_FLAG_PRIO, renderQueue, 0, transparency)
+		return true
+	}
+	
+	if (objA0.update_address == 0x068e98 || objA0.update_address == 0x085102) && global.zone_act == 0x0800 && !isAgentStone()
+	{
+		u64 key = objA0.subtype2c ? "BenGoomba_Hat" : "BenGoomba_Shades"
+		Renderer.drawSprite(key, px, py, 0x00, SPRITE_FLAG_PRIO, 0xf000, 0, 255)
+		return true
+	}
+	
+	return base.Standalone.onWriteToSpriteTable(px, py, renderQueue)
+}

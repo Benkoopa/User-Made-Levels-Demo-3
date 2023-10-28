@@ -1,0 +1,77 @@
+//# address-hook(0x071162) end(0x071178)
+function void fn071162()
+{
+	if (global.zone_act.apparent == 0x0501)
+	{
+		UnloadObject()
+		return
+	}
+
+#if STANDALONE
+	if (Game.isTimeAttack())
+	{
+		UnloadObject()
+		return
+	}
+#endif
+
+	requestLoadingPatterns(0x5f)
+	loadPaletteLine1(0x0719da)
+
+    level.boss_encounter = 1
+    move_area.left = camera.position.x.u16
+    move_area.bottom.current = 0x0388
+    move_area.bottom.target = 0x0388
+    level.bossarea.bottom = 0x0388
+
+    SevenForce.Defeated = false
+
+    LevelResults.AdvanceToNextAct()
+    playMusic(MUSIC_CTRL_FADEOUT)
+
+    camera.position.y.u16 = 0x300
+
+    PogoForce.Intitalize()
+}
+
+//# address-hook(0x02d6a6) end(0x02d768)
+function void TitleCard.Init()
+{
+    SevenForce.Defeated = 0
+    SevenForce.FlashOpacity = 0
+    SevenForce.FinalFlashOpacity = 0
+    SevenForce.WarningTimer = 0
+    SevenForce.WarningFrame = 0
+    SevenForce.TriggerTitleActive = false
+    SevenForce.TriggerTitleTimer = 0
+    if global.zone != 0x05
+    {
+        base.TitleCard.Init()
+        return
+    }
+    if (global.zone_act.apparent == 0x0501) && level.boss_encounter != 1
+    {
+        TriggerNextZone(0x0500)
+        checkpoint.number = 4
+    }
+
+    base.TitleCard.Init()
+}
+
+//# address-hook(0x02d804) end(0x02d854)
+function void TitleCard.Appear()
+{
+    if global.zone != 0x05
+    {
+        base.TitleCard.Appear()
+        return
+    }
+	if (u16[A0 + 0x34] != 0)
+	{
+		u16[A0 + 0x34] = 0
+		return
+	}
+
+	u16[A0 + 0x48] = 0
+	objA0.base_state += 2
+}

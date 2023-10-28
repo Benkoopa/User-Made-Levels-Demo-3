@@ -1,0 +1,377 @@
+// Roller Force (2nd phase, wheel)
+
+global u8 RollerForce.State
+global u16 RollerForce.StateTimer
+
+global u64 RollerForce.Rotation
+global u64 RollerForce.Scale
+
+/* PF States
+0 = waiting to drop
+1 = dropping
+*/
+
+// Renderer
+function bool Standalone.onWriteToSpriteTable(s16 px, s16 py, u16 renderQueue)
+{
+    // Body
+    if (objA0.update_address == 0x21022A)
+    {
+        Renderer.drawCustomSprite("RollerForce_Body", px, py, 0, render_flag.WORLD, renderQueue - 1005, RollerForce.Rotation, 0xfffffffffff, RollerForce.Scale)
+
+        if (SevenForce.HitFlashTimer)
+        {
+            if (level.framecounter.low & 0x01)
+            {
+                Renderer.drawCustomSprite("SevenForce_MainBody_Hit", px, py, 0, render_flag.WORLD | SPRITE_FLAG_PRIO, renderQueue - 1003, 0, 255)
+                Renderer.drawCustomSprite("SevenForce_MainEye", px + SevenForce.EyeOffset, py, 0, render_flag.WORLD | SPRITE_FLAG_PRIO, renderQueue - 1002, 0, 255)
+            }
+            else
+            {
+                Renderer.drawCustomSprite("SevenForce_MainBody", px, py, 0, render_flag.WORLD | SPRITE_FLAG_PRIO, renderQueue - 1003, 0, 255)
+                Renderer.drawCustomSprite("SevenForce_MainEye_Hit", px + SevenForce.EyeOffset, py, 0, render_flag.WORLD | SPRITE_FLAG_PRIO, renderQueue - 1002, 0, 255)
+            }
+
+            Renderer.drawCustomSprite("SevenForce_MainIris", px + SevenForce.EyeOffset * 2, py, 0, render_flag.WORLD | SPRITE_FLAG_PRIO, renderQueue - 1001, 0, 255)
+            Renderer.drawCustomSprite("SevenForce_MainIrisShine", px + SevenForce.EyeOffset, py, 0, render_flag.WORLD | SPRITE_FLAG_PRIO, renderQueue - 1000, 0, 255)
+        }
+        else
+        {
+            Renderer.drawCustomSprite("SevenForce_MainBody", px, py, 0, render_flag.WORLD | SPRITE_FLAG_PRIO, renderQueue - 1003, 0, 255)
+            Renderer.drawCustomSprite("SevenForce_MainEye", px + SevenForce.EyeOffset, py, 0, render_flag.WORLD | SPRITE_FLAG_PRIO, renderQueue - 1002, 0, 255)
+
+            Renderer.drawCustomSprite("SevenForce_MainIris", px + SevenForce.EyeOffset * 2, py, 0, render_flag.WORLD | SPRITE_FLAG_PRIO, renderQueue - 1001, 0, 255)
+            Renderer.drawCustomSprite("SevenForce_MainIrisShine", px + SevenForce.EyeOffset, py, 0, render_flag.WORLD | SPRITE_FLAG_PRIO, renderQueue - 1000, 0, 255)
+        }
+        return true
+    }
+
+    // Rock
+    if (objA0.update_address == 0x21022C)
+    {
+        if SevenForce.Phase > 3
+            Renderer.drawCustomSprite("RollerForce_Rock", px, py, 0, render_flag.WORLD | SPRITE_FLAG_PRIO, renderQueue - 1000, 0, 255)
+        else
+            Renderer.drawCustomSprite("RollerForce_Rock", px, py, 0, render_flag.WORLD, renderQueue - 1000, 0, 255)
+        return true
+    }
+
+    return base.Standalone.onWriteToSpriteTable(px, py, renderQueue)
+}
+
+function void RollerForce.Intitalize()
+{   
+    if (allocDynamicObjectStd())
+    {
+        boss.remaining_hits = 8
+		RollerForce.State = 0
+        RollerForce.StateTimer = 180
+        RollerForce.Rotation = 0
+        RollerForce.Scale = 0
+        objA1.update_address = 0x21022A // roller force
+ 		objA1.mapping_offset = 0x01a99a
+		objA1.sprite_attributes = (sprite_attribute.PRIORITY | 0x06bc)
+		objA1.render_flags = render_flag.WORLD
+		objA1.sprite_priority = 0x100
+		objA1.hitbox_extends.x = 32
+		objA1.hitbox_extends.y = 32
+        objA1.position.y.u16 = objA0.position.y.u16
+        objA1.position.x.u16 = objA0.position.x.u16
+        objA1.box_size.x = 64
+        objA1.box_size.y = 64
+
+        objA1.collision_attributes = collision.size.32x32
+
+        //playSound(0x7a)
+
+        SevenForce.HitFlashTimer = 0
+        SevenForce.Phase = 1
+
+        Audio.playAudio("gsh_strain", AudioContext.CONTEXT_SOUND)
+    }
+}
+
+//#address-hook(0x21022A)
+function void RollerForce.BaseUpdate()
+{
+    RollerForce.HealthUpdater()
+    RollerForce.StateMachine()
+    SevenForce.DirectionCheck()
+    SevenForce.StayInBoundary()
+    SevenForce.UpdateHitFlashing()
+
+    Enemy.DrawDynamicObject()
+
+    if RollerForce.Scale < 0xffff
+        RollerForce.Scale += 0x200
+    else
+        RollerForce.Scale = 0xffff
+
+    if Mods.isModActive("Bossbar") && (RollerForce.State > 1) && (!SevenForce.FlashOpacity)
+    {
+        DrawBossHealthBar(0xe4, boss.remaining_hits, 8)
+    }
+}
+
+function void RollerForce.HealthUpdater()
+{
+    if (objA0.collision_attributes != 0)
+        return
+
+    if (boss.remaining_hits == 0) && (!SevenForce.FlashOpacity)
+    {
+        SevenForce.Transform()
+
+        /*
+        A1 = 0xffff0000 + u16[0xfffffaae]
+        if (objA1.update_address == 0x08b660)
+        {
+            u8[A1 + 0x38] |= 0x20
+        }
+        */
+
+        StormForce.Intitalize()
+        UnloadObject()
+        return
+    }
+
+    if (objA0.state == 0) && (!SevenForce.FlashOpacity)
+    {
+        objA0.state = 0x20
+        playSound(0x6e)
+        objA0.flags2a |= 0x40
+        SevenForce.HitFlashTimer = 0x20
+    }
+
+    // code for hit flashing and other stuff here
+
+    --objA0.state
+    if (objA0.state == 0)
+    {
+        objA0.flags2a &= ~0x40
+        u8[A0 + 0x28] = u8[A0 + 0x25]
+    }
+}
+
+function void RollerForce.StateMachine()
+{
+    UpdateMovementStraightSimple()
+    SevenForce.StudioTriggerMoment()
+
+    if RollerForce.StateTimer
+        RollerForce.StateTimer--
+
+    if RollerForce.State == 0 // Init
+    {
+        boss.remaining_hits = 8
+        RollerForce.Rotation++
+
+        if RollerForce.StateTimer == 1
+        {
+            RollerForce.State = 1
+        }
+    }
+    if RollerForce.State == 1 // First fall
+    {
+        MoveWithGravity20()
+
+        if objA0.position.y.u16 >= 0x0350
+        {
+            objA0.velocity.y = 0
+            RollerForce.State = 2
+            camera.hyper_knux_shake = 0x0114
+            playSound(0x9e)
+            Audio.playAudio("gsh_impact", AudioContext.CONTEXT_SOUND)
+        }
+    }
+
+    // Loop from here
+
+    if RollerForce.State == 2
+    {
+        if objA0.position.x.u16 <= 0x0640
+        {
+            camera.hyper_knux_shake = 0x14
+            playSound(0x9e)
+            Audio.playAudio("gsh_impact2", AudioContext.CONTEXT_SOUND)
+
+            objA0.velocity.x = 0
+            objA0.velocity.y = 0
+            RollerForce.State = 3
+        }
+        else
+        {
+            objA0.velocity.x -= 0x20
+            RollerForce.Rotation -= objA0.velocity.x / 256
+
+            if !(level.framecounter.low & 0x03)
+                Audio.playAudio("gsh_roll", AudioContext.CONTEXT_SOUND)
+
+            if (level.framecounter.low & 0x03)
+            {
+                spawnChildObject(0x210226, 0x00, 0, 0x2a) // Shockwave (Right)
+                objA1.mapping_offset = 0x01a99a
+                objA1.sprite_attributes = (sprite_attribute.PRIORITY | 0x06bc)
+                objA1.render_flags = render_flag.WORLD
+                objA1.sprite_priority = 0x100
+                objA1.hitbox_extends.x = 12
+                objA1.hitbox_extends.y = 12
+                objA1.collision_attributes = (collision.size.8x8 | collision.flag.THREAT)
+                objA1.velocity.x = -objA0.velocity.x
+                objA1.velocity.y = 0
+                objA1.state = 0
+                objA1.subtype2c = 0x02
+                objA1.box_size.x = 8
+                objA1.box_size.y = 8
+            }
+
+            if ((level.framecounter.low & 0x0f) == 0)
+            {
+                playSound(0x67)
+
+                spawnChildObject(0x21022C, 0x00, 0, 0x50) // Rock
+                objA1.mapping_offset = 0x01a99a
+                objA1.sprite_attributes = (sprite_attribute.PRIORITY | 0x06bc)
+                objA1.render_flags = render_flag.WORLD
+                objA1.sprite_priority = 0x100
+                objA1.hitbox_extends.x = 12
+                objA1.hitbox_extends.y = 12
+                objA1.collision_attributes = (collision.size.8x8 | collision.flag.THREAT)
+                objA1.state = 0
+                objA1.velocity.y = -0x500
+                objA1.subtype2c = 0x00
+                objA1.box_size.x = 8
+                objA1.box_size.y = 8
+            }
+        }
+    }
+    if RollerForce.State == 3
+    {
+        if objA0.position.y.u16 <= 0x02e0
+        {
+            camera.hyper_knux_shake = 0x0114
+            playSound(0x9e)
+            Audio.playAudio("gsh_impact2", AudioContext.CONTEXT_SOUND)
+
+            objA0.velocity.x = 0
+            objA0.velocity.y = 0
+            RollerForce.State = 4
+        }
+        else
+        {
+            objA0.velocity.y -= 0x10
+            RollerForce.Rotation -= objA0.velocity.y / 256
+
+            if !(level.framecounter.low & 0x03)
+                Audio.playAudio("gsh_roll", AudioContext.CONTEXT_SOUND)
+        }
+    }
+    if RollerForce.State == 4
+    {
+        if objA0.position.x.u16 >= 0x07f0
+        {
+            camera.hyper_knux_shake = 0x14
+            playSound(0x9e)
+            Audio.playAudio("gsh_impact2", AudioContext.CONTEXT_SOUND)
+
+            objA0.velocity.x = 0
+            objA0.velocity.y = 0
+            RollerForce.State = 5
+        }
+        else
+        {
+            objA0.velocity.x += 0x20
+            RollerForce.Rotation += objA0.velocity.x / 256
+
+            if !(level.framecounter.low & 0x03)
+                Audio.playAudio("gsh_roll", AudioContext.CONTEXT_SOUND)
+            
+            if ((level.framecounter.low & 0x0f) == 0)
+            {
+                playSound(0x67)
+
+                spawnChildObject(0x21022C, 0x00, 0, -0x50) // Rock
+                objA1.mapping_offset = 0x01a99a
+                objA1.sprite_attributes = (sprite_attribute.PRIORITY | 0x06bc)
+                objA1.render_flags = render_flag.WORLD
+                objA1.sprite_priority = 0x100
+                objA1.hitbox_extends.x = 12
+                objA1.hitbox_extends.y = 12
+                objA1.collision_attributes = (collision.size.8x8 | collision.flag.THREAT)
+                objA1.state = 0
+                objA1.subtype2c = 0x00
+                objA1.box_size.x = 8
+                objA1.box_size.y = 8
+            }
+        }
+    }
+    if RollerForce.State == 5
+    {
+        if objA0.position.y.u16 >= 0x0350
+        {
+            camera.hyper_knux_shake = 0x0114
+            playSound(0x9e)
+            Audio.playAudio("gsh_impact2", AudioContext.CONTEXT_SOUND)
+
+            objA0.velocity.x = 0
+            objA0.velocity.y = 0
+            RollerForce.State = 2
+
+            spawnChildObject(0x210226, 0x00, 0, 0x2a) // Shockwave (Left)
+            objA1.mapping_offset = 0x01a99a
+            objA1.sprite_attributes = (sprite_attribute.PRIORITY | 0x06bc)
+            objA1.render_flags = render_flag.WORLD
+            objA1.sprite_priority = 0x100
+            objA1.hitbox_extends.x = 12
+            objA1.hitbox_extends.y = 12
+            objA1.collision_attributes = (collision.size.8x8 | collision.flag.THREAT)
+            objA1.velocity.x = -0x1000
+            objA1.velocity.y = 0
+            objA1.state = 0
+            objA1.subtype2c = 0x00
+            objA1.box_size.x = 8
+            objA1.box_size.y = 8
+
+            spawnChildObject(0x210226, 0x00, 0, 0x2a) // Shockwave (Right)
+            objA1.mapping_offset = 0x01a99a
+            objA1.sprite_attributes = (sprite_attribute.PRIORITY | 0x06bc)
+            objA1.render_flags = render_flag.WORLD
+            objA1.sprite_priority = 0x100
+            objA1.hitbox_extends.x = 12
+            objA1.hitbox_extends.y = 12
+            objA1.collision_attributes = (collision.size.8x8 | collision.flag.THREAT)
+            objA1.velocity.x = 0x1000
+            objA1.velocity.y = 0
+            objA1.state = 0
+            objA1.subtype2c = 0x02
+            objA1.box_size.x = 8
+            objA1.box_size.y = 8
+        }
+        else
+        {
+            objA0.velocity.y += 0x10
+            RollerForce.Rotation += objA0.velocity.y / 256
+
+            if !(level.framecounter.low & 0x03)
+                Audio.playAudio("gsh_roll", AudioContext.CONTEXT_SOUND)
+        }
+    }
+}
+
+//#address-hook(0x21022C)
+function void RollerForce.Rock.BaseUpdate()
+{
+    objA0.state += 1
+    SevenForce.ProjectileUnloader()
+
+
+    Enemy.DrawDynamicObject()
+    UpdateMovementStraightSimple()
+    MoveWithGravity20()
+
+    if (objA0.state > 120)
+    {
+        UnloadObject()
+        return
+    }
+}

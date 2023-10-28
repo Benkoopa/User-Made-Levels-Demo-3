@@ -1,0 +1,26 @@
+// unified into one file and moved into a different folder because having files for single functions is dumb
+// ExtLife_useCYS() is not put here because that is meant as a PURELY AUDIO related function
+// ~ Lemons
+
+function bool UML_IsFabFang()
+{
+	// this function was only ever meant to run for fab fang and es fang (who was at the time, very much just a portleg of fab fang)
+	// that is why it is called this 
+	// ~ Lemons
+	
+	if (u8[0xffffe654] == 0) // god fucking damnit fab why did you have to put a version number in the mod name why couldnt you just keep it "Nack the Weasel" THERE IS LITERALLY A VERSION NUMBER SECTION RIGHT THERE THAT YOU EVEN USED ~ Hazel
+		return ((Mods.isModActive("Nack The Weasel") || Mods.isModActive("Nack The Weasel V6")) && isMainCharacter(CHARACTER_KNUCKLES))
+	else 
+	{
+		string shortHand = substring(ExtraChar.getCharacterName(u8[0xffffe654]), 0, 4)
+		return (shortHand == "Fang" || shortHand == "Nack")	//I added Mighty for testing purposes
+	}
+}
+
+function bool UML_IsSawnicOrSludgles()
+{
+	if (Mods.isModActive("SAWNIC & SLUDGLES"))
+		return ((isMainCharacter(CHARACTER_SONIC) || isMainCharacter(CHARACTER_KNUCKLES)) && u8[0xffffe654] == 0)
+	
+	return (Mods.isModActive("Sawnic") && isMainCharacter(CHARACTER_SONIC) && u8[0xffffe654] == 0)
+}

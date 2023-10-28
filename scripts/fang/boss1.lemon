@@ -1,0 +1,526 @@
+global u8 Fang.Phase
+global u8 Fang.HitFlashTimer
+global u8 Fang.State
+global u8 FangPinch.State
+global bool Fang.Direction
+global u16 Fang.Attack
+global u16 Fang.AttackTimer
+
+global bool isFangEncounter
+
+/*
+
+0x260264 - Fang (Phase 1)
+0x260266 - Cork
+0x260268 - Missile
+0x26026A - Phase 1 Defeated
+0x26026C - Debris
+
+*/
+
+function void DrawBossHealthBar(u8 boss.id, u8 bar.health, u8 bar.max)
+{
+    base.DrawBossHealthBar(boss.id, bar.health, bar.max)
+}
+
+function void Fang.DirectionCheck()
+{
+    A2 = 0xffffb000
+    Fang.Direction = (u16[A2 + 0x10] > objA0.position.x.u16 ? 1 : 0) // 0 = left, 1 = right
+}
+
+//# address-hook(0x06c698) end(0x06c6ee)
+function void fn06c698()
+{
+    base.fn06c698()
+	isFangEncounter = true // Needed for music
+	if (UML_IsSawnicOrSludgles())	//Is this Sawnic?
+	{
+		isFangEncounter = false // Then we don't overwrite the music.
+	}
+}
+
+//# address-hook(0x06c702) end(0x06c714)
+function void fn06c702()
+{
+	if (UML_IsSawnicOrSludgles())	//Is this Sawnic?
+	{
+		base.fn06c702()	//If so, spawn in the Drill Mobile instead
+	}
+	else
+	{
+		setupObjectAttributesFull(0x06d770)	//If not, continue onwards with Fang
+
+		Kosinski.addToDMAQueue(0x36b340, 0x67e0)
+
+		Kosinski.addToDMAQueue(0x36d572, 0x8bc0)
+
+		requestLoadingPatterns(0x6d)
+		loadPaletteLine1(0x06d97c)
+
+		level.bossarea.left -= getScreenExtend()
+		level.bossarea.right += getScreenExtend()
+
+		Fang.Intitalize()
+		UnloadObject()
+	}
+}
+
+function void Fang.Intitalize()
+{   
+    playMusic(MUSIC_MAINBOSS)
+	DoBossWarning()
+	ChooseBossWarning()
+
+    if (allocDynamicObjectStd())
+    {
+        objA1.position.x.u16 = camera.position.x.u16 + getScreenWidth() + 0x30
+        objA1.position.y.u16 = 0x0048
+        objA1.box_size.x = 0x18
+        objA1.box_size.y = 0x18
+
+        objA1.collision_attributes = collision.size.16x16
+		objA1.hitbox_extends.x = 16
+		objA1.hitbox_extends.y = 16
+
+        objA1.update_address = 0x260264 // Fang (Phase 1)
+ 		objA1.mapping_offset = 0x01a99a
+		objA1.sprite_attributes = (sprite_attribute.PRIORITY | 0x06bc)
+		objA1.render_flags = render_flag.WORLD
+		objA1.sprite_priority = 0x100
+
+        Fang.Phase = 0
+        Fang.HitFlashTimer = 0
+        Fang.State = 0
+        FangPinch.State = 0
+        Fang.Direction = 0
+        Fang.Attack = 1
+        Fang.AttackTimer = 0
+    }
+}
+
+//#address-hook(0x260264)
+function void Fang.Phase1.BaseUpdate()
+{
+    Fang.DirectionCheck()
+    Fang.HealthUpdater()
+    Fang.StateMachine()
+    Fang.UpdateHitFlashing()
+
+    Enemy.DrawDynamicObject()
+
+    if Mods.isModActive("Bossbar") && (Fang.State != 0)
+    {
+        if u8[0xffffE654] == 17
+            DrawBossHealthBar(0x01, boss.remaining_hits, 28)
+        else
+            DrawBossHealthBar(0x01, boss.remaining_hits, 12)
+    }
+}
+
+function void Fang.HealthUpdater()
+{
+    if (objA0.collision_attributes != 0)
+        return
+
+    if (boss.remaining_hits < 5) || (u8[0xffffE654] == 17 && boss.remaining_hits < 9)
+    {
+        requestLoadingPatterns(0x5f)
+
+        playSound(0x6e)
+        //camera.hyper_knux_shake = 0x14
+        Fang.Phase = 1
+
+        spawnChildObject(0x083d84, 0x00, 0, 0)
+
+        spawnChildObject(0x26026A, 0x00, 0, 0)
+        objA1.mapping_offset = 0x01a99a
+        objA1.sprite_attributes = (sprite_attribute.PRIORITY | 0x06bc)
+        objA1.render_flags = render_flag.WORLD
+        objA1.sprite_priority = 0x100
+        objA1.box_size.x = 999
+        objA1.box_size.y = 999
+
+        UnloadObject()
+        return
+    }
+
+    if (objA0.state == 0)
+    {
+        objA0.state = 0x20
+        playSound(0x6e)
+        objA0.flags2a |= 0x40
+        Fang.HitFlashTimer = 0x20
+    }
+
+    // code for hit flashing and other stuff here
+
+    --objA0.state
+    if (objA0.state == 0)
+    {
+        objA0.flags2a &= ~0x40
+        u8[A0 + 0x28] = u8[A0 + 0x25]
+    }
+}
+
+function void Fang.UpdateHitFlashing()
+{
+    if Fang.HitFlashTimer
+        Fang.HitFlashTimer--
+}
+
+function void Fang.StateMachine()
+{
+    UpdateMovementStraightSimple()
+
+    if Fang.Attack > 3
+        Fang.Attack = 0
+
+    if (Fang.State == 0) // init
+    {
+        Fang.State++
+        playSound(0x60)
+        if (u8[0xffffE654] == 17) // Is Kit?
+            boss.remaining_hits = 28
+        else
+            boss.remaining_hits = 12 // 12
+
+        objA0.velocity.y = 0
+        objA0.velocity.x = 0
+    }
+    if (Fang.State == 1)
+    {
+        if Fang.Attack >= 3
+        {
+           Fang.State = 5
+           Fang.Attack = 0
+        }
+
+        objA0.position.x.u16 -= 4
+
+        if objA0.position.x.u16 < camera.position.x.u16 + getScreenWidth() / 2
+        {
+            Fang.State++
+            Fang.AttackTimer = 0
+            objA0.velocity.y = 0
+            objA0.velocity.x = 0
+        }
+    }
+    if (Fang.State == 2)
+    {
+        Fang.AttackTimer++
+
+        if (Fang.AttackTimer == 40) // Attacking
+        {
+            if (Fang.Attack == 1)
+            {
+                playSound(0x4d)
+                if !Fang.Direction
+                {
+                    spawnChildObject(0x260266, 0x00, -0x08, 0x00)
+                    objA1.mapping_offset = 0x01a99a
+                    objA1.sprite_attributes = (sprite_attribute.PRIORITY | 0x06bc)
+                    objA1.render_flags = render_flag.WORLD
+                    objA1.sprite_priority = 0x100
+                    objA1.hitbox_extends.x = 4
+                    objA1.hitbox_extends.y = 4
+                    objA1.collision_attributes = (collision.size.4x4 | collision.flag.THREAT)
+                    objA1.state = 0
+                    objA1.subtype2c = 0x04 // Down Left
+                    objA1.velocity.x = -0x200
+                    objA1.velocity.y = 0x200
+                    objA1.box_size.x = 4
+                    objA1.box_size.y = 4
+                }
+                else
+                {
+                    spawnChildObject(0x260266, 0x00, -0x08, 0x00)
+                    objA1.mapping_offset = 0x01a99a
+                    objA1.sprite_attributes = (sprite_attribute.PRIORITY | 0x06bc)
+                    objA1.render_flags = render_flag.WORLD
+                    objA1.sprite_priority = 0x100
+                    objA1.hitbox_extends.x = 4
+                    objA1.hitbox_extends.y = 4
+                    objA1.collision_attributes = (collision.size.4x4 | collision.flag.THREAT)
+                    objA1.state = 0
+                    objA1.subtype2c = 0x06 // Down Right
+                    objA1.velocity.x = 0x200
+                    objA1.velocity.y = 0x200
+                    objA1.box_size.x = 4
+                    objA1.box_size.y = 4
+                }
+            }
+            else if (Fang.Attack == 2)
+            {
+                playSound(SFX_GRAB)
+                spawnChildObject(0x260268, 0x00, 0x00, 0x24)
+                objA1.mapping_offset = 0x01a99a
+                objA1.sprite_attributes = (sprite_attribute.PRIORITY | 0x06bc)
+                objA1.render_flags = render_flag.WORLD
+                objA1.sprite_priority = 0x100
+                objA1.hitbox_extends.x = 16
+                objA1.hitbox_extends.y = 8
+                objA1.collision_attributes = (collision.size.16x8 | collision.flag.THREAT)
+                // random number
+                GetRandomNumber()
+                D0.u16 &= 10
+                objA1.state = 0 + D0.u16
+                objA1.subtype2c = 0x00
+                objA1.velocity.x = 0
+                objA1.velocity.y = 0
+                objA1.box_size.x = 16
+                objA1.box_size.y = 8
+            }
+        }
+        else if (Fang.AttackTimer == 80)
+        {
+            Fang.State++
+            objA0.velocity.y = 0
+            objA0.velocity.x = 0
+        }
+    }
+    if (Fang.State == 3) // Leaving
+    {
+        objA0.position.x.u16 -= 4
+
+        if objA0.position.x.u16 < camera.position.x.u16 - 0x60
+        {
+            objA0.velocity.y = 0
+            objA0.velocity.x = 0
+            Fang.State++
+            playSound(0x60)
+            Fang.AttackTimer = 0
+            objA0.position.y.u16 = 0x00b8
+        }
+    }
+    if (Fang.State == 4) // Flyring in from right
+    {
+        objA0.position.x.u16 += 4
+        objA0.position.y.u16 = 0x00b8
+        objA0.velocity.y = 0
+        objA0.velocity.x = 0
+
+        if objA0.position.x.u16 > camera.position.x.u16 + getScreenWidth() + 0x60
+        {
+            Fang.State = 1
+            Fang.Attack++
+            playSound(SFX_GRAB)
+
+            Fang.AttackTimer = 0
+            objA0.position.y.u16 = 0x0048
+            objA0.velocity.y = 0
+            objA0.velocity.x = 0
+            objA0.position.x.u16 -= 1
+        }
+    }
+    if (Fang.State == 5) // Bouncing with spring
+    {
+        objA0.position.x.u16 -= 2
+        objA0.velocity.x = 0
+        MoveWithGravity20()
+        Fang.Attack = 1
+        Fang.AttackTimer = 0
+
+        if objA0.position.x.u16 < camera.position.x.u16 - 0x60
+        {
+            objA0.velocity.y = 0
+            objA0.velocity.x = 0
+            playSound(0x60)
+            objA0.position.y.u16 = 0x00c0
+            Fang.State = 4
+        }
+
+        if objA0.position.y.u16 > 0x00b1
+        {
+            objA0.position.y.u16 = 0x00b0
+            objA0.velocity.y = -0x400
+            playSound(SFX_SPRING)
+            Fang.Attack = 0
+            Fang.AttackTimer = 0
+        }
+    }
+}
+
+//#address-hook(0x260266)
+function void Fang.Cork.BaseUpdate()
+{
+    objA0.state += 1
+
+    Enemy.DrawDynamicObject()
+    UpdateMovementStraightSimple()
+
+    if (objA0.state > 240)
+    {
+        UnloadObject()
+        return
+    }
+}
+
+//#address-hook(0x260268)
+function void Fang.Missile.BaseUpdate()
+{
+    objA0.state += 1
+
+    Enemy.DrawDynamicObject()
+    UpdateMovementStraightSimple()
+
+    if (objA0.state > 240)
+    {
+        UnloadObject()
+        return
+    }
+
+    if (objA0.state == 19)
+    {
+        playSound(0xa0)
+        playSound(0x86)
+
+        A2 = 0xffffb000
+        if (u16[A2 + 0x10] > objA0.position.x.u16)
+            objA0.subtype2c = 0x02
+    }
+
+    if (objA0.state > 24)
+    {
+        if objA0.subtype2c == 0x00
+            objA0.velocity.x -= 0x48
+        else
+            objA0.velocity.x += 0x48
+
+        objA0.velocity.y = objA0.velocity.y / 2
+    }
+    else
+    {
+        MoveWithGravity20()
+        //objA0.velocity.y -= 0x16
+
+        if objA0.subtype2c == 0x00
+            objA0.velocity.x -= 0x4
+        else
+            objA0.velocity.x = 0x4
+    }
+}
+
+//#address-hook(0x26026A)
+function void FangPhase1.Defeated.BaseUpdate()
+{
+    Enemy.DrawDynamicObject()
+
+    if Mods.isModActive("Bossbar")
+    {
+        if u8[0xffffE654] == 17
+            DrawBossHealthBar(0x01, boss.remaining_hits, 28)
+        else
+            DrawBossHealthBar(0x01, boss.remaining_hits, 12)
+    }
+
+    if (u8[0xffffE654] == 17) // Is Kit?
+        boss.remaining_hits = 8
+    else
+        boss.remaining_hits = 4
+
+    objA0.state += 1
+    UpdateMovementStraightSimple()
+
+    if (objA0.state > 60)
+    {
+        MoveWithGravity20()
+    }
+    else
+    {
+        objA0.velocity.y = 0
+        if objA0.position.y.u16 > 0x0048
+            --objA0.position.y.u16
+    }
+
+    if (objA0.state == 60)
+    {
+        objA0.velocity.y = -0x200
+        playSound(SFX_BOMBFALL)
+    }
+
+    if (objA0.state > 240) || (objA0.position.y.u16 > 0x00bf)
+    {
+        Fang2.Intitalize()
+
+        playSound(0x6e)
+        playSound(0x9b)
+        playSound(SFX_COLLAPSE)
+        playSound(0x4e)
+        spawnChildObject(0x083d84, 0x00, 0, 0)
+
+        // Debris
+        spawnChildObject(0x26026C, 0x00, 0, 0) // Up Left
+        objA1.mapping_offset = 0x01a99a
+        objA1.sprite_attributes = (sprite_attribute.PRIORITY | 0x06bc)
+        objA1.render_flags = render_flag.WORLD
+        objA1.sprite_priority = 0x100
+        objA1.state = 0
+        objA1.subtype2c = 0x00
+        objA1.box_size.x = 32
+        objA1.box_size.y = 32
+        objA1.velocity.x = 0x100
+        objA1.velocity.y = -0x100
+
+        spawnChildObject(0x26026C, 0x00, 0, 0) // Up Right
+        objA1.mapping_offset = 0x01a99a
+        objA1.sprite_attributes = (sprite_attribute.PRIORITY | 0x06bc)
+        objA1.render_flags = render_flag.WORLD
+        objA1.sprite_priority = 0x100
+        objA1.state = 0
+        objA1.subtype2c = 0x02
+        objA1.box_size.x = 32
+        objA1.box_size.y = 32
+        objA1.velocity.x = -0x100
+        objA1.velocity.y = -0x100
+
+        spawnChildObject(0x26026C, 0x00, 0, 0) // Down Left
+        objA1.mapping_offset = 0x01a99a
+        objA1.sprite_attributes = (sprite_attribute.PRIORITY | 0x06bc)
+        objA1.render_flags = render_flag.WORLD
+        objA1.sprite_priority = 0x100
+        objA1.state = 0
+        objA1.subtype2c = 0x04
+        objA1.box_size.x = 32
+        objA1.box_size.y = 32
+        objA1.velocity.x = 0x100
+        objA1.velocity.y = 0x100
+
+        spawnChildObject(0x26026C, 0x00, 0, 0) // Down Right
+        objA1.mapping_offset = 0x01a99a
+        objA1.sprite_attributes = (sprite_attribute.PRIORITY | 0x06bc)
+        objA1.render_flags = render_flag.WORLD
+        objA1.sprite_priority = 0x100
+        objA1.state = 0
+        objA1.subtype2c = 0x06
+        objA1.box_size.x = 32
+        objA1.box_size.y = 32
+        objA1.velocity.x = -0x100
+        objA1.velocity.y = 0x100
+
+        UnloadObject()
+        return
+    }
+}
+
+//#address-hook(0x26026C)
+function void MarvelousQueen.Debris.BaseUpdate()
+{
+    if global.zone_act != 0x0201
+    {
+        UnloadObject()
+        return
+    }
+
+    objA0.state += 1
+
+    Enemy.DrawDynamicObject()
+    UpdateMovementStraightSimple()
+    MoveWithGravity20()
+
+    if (objA0.state > 240) || (objA0.position.y.u16 > 0x0200)
+    {
+        UnloadObject()
+        return
+    }
+}

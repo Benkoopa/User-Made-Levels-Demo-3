@@ -1,0 +1,224 @@
+function bool Standalone.onWriteToSpriteTable(s16 px, s16 py, u16 renderQueue)
+{
+	u64 key
+	if (objA0.update_address == 0x260264) // Fang
+	{
+		if (Fang.State == 1) || (Fang.State == 2) || (Fang.State == 3) || (Fang.State == 5) // flying in from left
+		{
+			if Fang.HitFlashTimer
+			{
+				if (level.framecounter.low & 0x01)
+					Renderer.drawCustomSprite("Fang_MarvelousQueen_0_Hit", px, py, 0, render_flag.WORLD | SPRITE_FLAG_FLIP_X, renderQueue - 500, 0, 255)
+				else
+					Renderer.drawCustomSprite("Fang_MarvelousQueen_1_Hit", px, py, 0, render_flag.WORLD | SPRITE_FLAG_FLIP_X, renderQueue - 500, 0, 255)
+			}
+			else
+			{
+				if (level.framecounter.low & 0x01)
+					Renderer.drawCustomSprite("Fang_MarvelousQueen_0", px, py, 0, render_flag.WORLD | SPRITE_FLAG_FLIP_X, renderQueue - 500, 0, 255)
+				else
+					Renderer.drawCustomSprite("Fang_MarvelousQueen_1", px, py, 0, render_flag.WORLD | SPRITE_FLAG_FLIP_X, renderQueue - 500, 0, 255)
+			}
+		}
+		else if (Fang.State == 4) // flying in from right
+		{
+			if Fang.HitFlashTimer
+			{
+				if (level.framecounter.low & 0x01)
+					Renderer.drawCustomSprite("Fang_MarvelousQueen_0_Hit", px, py, 0, render_flag.WORLD, renderQueue - 500, 0, 255)
+				else
+					Renderer.drawCustomSprite("Fang_MarvelousQueen_1_Hit", px, py, 0, render_flag.WORLD, renderQueue - 500, 0, 255)
+			}
+			else
+			{
+				if (level.framecounter.low & 0x01)
+					Renderer.drawCustomSprite("Fang_MarvelousQueen_0", px, py, 0, render_flag.WORLD, renderQueue - 500, 0, 255)
+				else
+					Renderer.drawCustomSprite("Fang_MarvelousQueen_1", px, py, 0, render_flag.WORLD, renderQueue - 500, 0, 255)
+			}
+		}
+
+		if (Fang.Attack == 2)
+		{
+			if (Fang.AttackTimer < 40)
+				Renderer.drawCustomSprite("Fang_MissileHolder_Armed", px, py + 30, 0, render_flag.WORLD | SPRITE_FLAG_FLIP_X, renderQueue - 510, 0, 255)
+			else
+				Renderer.drawCustomSprite("Fang_MissileHolder_Empty", px, py + 30, 0, render_flag.WORLD | SPRITE_FLAG_FLIP_X, renderQueue - 510, 0, 255)
+		}
+
+		if (Fang.State == 5)
+		{
+			if (objA0.position.y.u16 > 0x00a0)
+				Renderer.drawCustomSprite("Fang_Spring_1", px - 8, py + 30, 0, render_flag.WORLD, renderQueue - 510, 0, 255)
+			else
+				Renderer.drawCustomSprite("Fang_Spring_0", px - 8, py + 30, 0, render_flag.WORLD, renderQueue - 510, 0, 255)
+		}
+		return true
+	}
+	if (objA0.update_address == 0x260266) // Cork
+	{
+		if objA0.subtype2c == 0x00
+			Renderer.drawCustomSprite("Fang_Cork_Straight", px, py, 0, render_flag.WORLD | SPRITE_FLAG_FLIP_X, renderQueue - 450, 0, 255)
+		if objA0.subtype2c == 0x02
+			Renderer.drawCustomSprite("Fang_Cork_Straight", px, py, 0, render_flag.WORLD, renderQueue - 450, 0, 255)
+		if objA0.subtype2c == 0x04
+			Renderer.drawCustomSprite("Fang_Cork_Angled", px, py, 0, render_flag.WORLD | SPRITE_FLAG_FLIP_X, renderQueue - 450, 0, 255)
+		if objA0.subtype2c == 0x06
+			Renderer.drawCustomSprite("Fang_Cork_Angled", px, py, 0, render_flag.WORLD, renderQueue - 450, 0, 255)
+
+		return true
+	}
+	if (objA0.update_address == 0x260268) // Missile
+	{
+		if objA0.subtype2c == 0x00 // Left
+		{
+			if (objA0.state > 19)
+			{
+				if (level.framecounter.low & 0x01)
+				{
+					Renderer.drawCustomSprite("Fang_Missile_0", px, py, 0, render_flag.WORLD | SPRITE_FLAG_FLIP_X, renderQueue - 505, 0, 255)
+					Renderer.drawCustomSprite("BusterForce_Crosshair_1", 0x3da0 - camera.position.x.u16, py, 0, render_flag.WORLD | SPRITE_FLAG_PRIO, renderQueue, 0, 255)
+				}
+				else
+				{
+					Renderer.drawCustomSprite("Fang_Missile_1", px, py, 0, render_flag.WORLD | SPRITE_FLAG_FLIP_X, renderQueue - 505, 0, 255)
+					Renderer.drawCustomSprite("BusterForce_Crosshair_0", 0x3da0 - camera.position.x.u16, py, 0, render_flag.WORLD | SPRITE_FLAG_PRIO, renderQueue, 0, 255)
+				}
+			}
+			else
+			{
+				Renderer.drawCustomSprite("Fang_Missile_0", px, py, 0, render_flag.WORLD | SPRITE_FLAG_FLIP_X, renderQueue - 505, 0, 255)
+			}
+		}
+		else
+		{
+			if (objA0.state > 19)
+			{
+				if (level.framecounter.low & 0x01)
+				{
+					Renderer.drawCustomSprite("Fang_Missile_0", px, py, 0, render_flag.WORLD, renderQueue - 505, 0, 255)
+					Renderer.drawCustomSprite("BusterForce_Crosshair_1", 0x3e90 - camera.position.x.u16, py, 0, render_flag.WORLD | SPRITE_FLAG_PRIO, renderQueue + 1000, 0, 255)
+				}
+				else
+				{
+					Renderer.drawCustomSprite("Fang_Missile_1", px, py, 0, render_flag.WORLD, renderQueue - 505, 0, 255)
+					Renderer.drawCustomSprite("BusterForce_Crosshair_0", 0x3e90 - camera.position.x.u16, py, 0, render_flag.WORLD | SPRITE_FLAG_PRIO, renderQueue + 1000, 0, 255)
+				}
+			}
+			else
+			{
+				Renderer.drawCustomSprite("Fang_Missile_0", px, py, 0, render_flag.WORLD, renderQueue - 505, 0, 255)
+			}
+		}
+		return true
+	}
+	if (objA0.update_address == 0x26026A) // Phase 1 Defeated
+	{
+		Renderer.drawCustomSprite("Fang_MarvelousQueen_0_Hit", px, py, 0, render_flag.WORLD | SPRITE_FLAG_FLIP_X, renderQueue - 500, 0, 255)
+		return true
+	}
+	if (objA0.update_address == 0x26026C) // Debris
+	{
+		if (level.framecounter.low & 0x01)
+		{
+			if objA0.subtype2c == 0x00
+				Renderer.drawCustomSprite("Fang_MarvelousQueen_Debris_TopLeft", px, py, 0, render_flag.WORLD | SPRITE_FLAG_FLIP_X | SPRITE_FLAG_PRIO, renderQueue + 500, 0, 255)
+			if objA0.subtype2c == 0x02
+				Renderer.drawCustomSprite("Fang_MarvelousQueen_Debris_TopRight", px, py, 0, render_flag.WORLD | SPRITE_FLAG_FLIP_X | SPRITE_FLAG_PRIO, renderQueue + 500, 0, 255)
+			if objA0.subtype2c == 0x04
+				Renderer.drawCustomSprite("Fang_MarvelousQueen_Debris_BottomLeft", px, py, 0, render_flag.WORLD | SPRITE_FLAG_FLIP_X | SPRITE_FLAG_PRIO, renderQueue + 500, 0, 255)
+			if objA0.subtype2c == 0x06
+				Renderer.drawCustomSprite("Fang_MarvelousQueen_Debris_BottomRight", px, py, 0, render_flag.WORLD | SPRITE_FLAG_FLIP_X | SPRITE_FLAG_PRIO, renderQueue + 500, 0, 255)
+		}
+		return true
+	}
+	if (objA0.update_address == 0x26026E) // Phase 2
+	{
+		if (FangPinch.State == 0)
+		{
+			Renderer.drawCustomSprite("Fang_Fall", px, py, 0, render_flag.WORLD | SPRITE_FLAG_FLIP_X, renderQueue - 500, 0, 255)
+		}
+		if (FangPinch.State == 1)
+		{
+			Renderer.drawCustomSprite(stringformat("Fang_GetUp_0%d", Fang.Frame), px, py, 0, render_flag.WORLD | SPRITE_FLAG_FLIP_X, renderQueue - 500, 0, 255)
+		}
+		if (FangPinch.State == 2)
+		{
+			if !Fang.Direction
+				Renderer.drawCustomSprite(stringformat("Fang_Shoot_0%d", Fang.Frame), px, py, 0, render_flag.WORLD | SPRITE_FLAG_FLIP_X, renderQueue - 500, 0, 255)
+			else
+				Renderer.drawCustomSprite(stringformat("Fang_Shoot_0%d", Fang.Frame), px, py, 0, render_flag.WORLD, renderQueue - 500, 0, 255)
+		}
+		if (FangPinch.State == 3)
+		{
+			if (level.framecounter.low & 0x01)
+			{
+				if !Fang.Direction
+					Renderer.drawCustomSprite("Fang_Hurt_1", px, py, 0, render_flag.WORLD | SPRITE_FLAG_FLIP_X, renderQueue - 500, 0, 255)
+				else
+					Renderer.drawCustomSprite("Fang_Hurt_1", px, py, 0, render_flag.WORLD, renderQueue - 500, 0, 255)
+			}
+		}
+		return true
+	}
+	if (objA0.update_address == 0x260270) // Phase 2 Defeated
+	{
+		if (FangDefeated.State == 0)
+			Renderer.drawCustomSprite("Fang_Hurt_0", px, py, 0, render_flag.WORLD | SPRITE_FLAG_FLIP_X, renderQueue - 500, 0, 255)
+		else
+			Renderer.drawCustomSprite(stringformat("Fang_Leave_0%d", Fang.Frame), px, py, 0, render_flag.WORLD, renderQueue - 500, 0, 255)
+		return true
+	}
+	if (objA0.update_address == 0x260272) // Rectile
+	{
+		if (objA0.state > 140)
+		{
+			if (level.framecounter.low & 0x03)
+				Renderer.drawCustomSprite("BusterForce_Crosshair_0", px, py, 0, render_flag.WORLD | SPRITE_FLAG_PRIO, 0xd000, 0, 255)
+			else
+				Renderer.drawCustomSprite("BusterForce_Crosshair_1", px, py, 0, render_flag.WORLD | SPRITE_FLAG_PRIO, 0xd000, 0, 255)
+		}
+		else
+		{
+			Renderer.drawCustomSprite(stringformat("Fang_Aim_0%d", Fang.FGIconFrame), px, py, 0, render_flag.WORLD | SPRITE_FLAG_PRIO, 0xd000, 0, 255)
+		}
+		return true
+	}
+	if (objA0.update_address == 0x260274) // Blast
+	{
+		return true
+	}
+	// Explosion of bosses (taken from Flame Quest repo)
+	if (u32[A0 + 0x0c] == 0x083ffc) && (global.zone_act == 0x0201) && !(level.boss_encounter || camera.position.x.u16 > 0x3d0c)
+	{
+		key = stringformat("boss_explosion_0x%02x", char.animation.sprite)
+		Renderer.drawCustomSprite(key, px, py, 0x00, objA0.render_flags, renderQueue + 500)
+		return true
+	}
+
+	return base.Standalone.onWriteToSpriteTable(px, py, renderQueue)
+}
+
+/*
+//# address-hook(0x01c11e) end(0x01c236)
+function void UpdateCameraPositionY()
+{
+	if !(global.zone_act.apparent == 0x0201 && level.boss_encounter == 1)
+    {
+        base.UpdateCameraPositionY()
+        return
+    }
+	else if camera.position.y.u16 > 0
+		camera.position.y.u16--
+}
+*/
+
+function void DoBossWarning()
+{
+    base.DoBossWarning()
+}
+
+function void ChooseBossWarning()
+{
+    base.ChooseBossWarning()
+}

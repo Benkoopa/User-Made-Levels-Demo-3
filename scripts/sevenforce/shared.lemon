@@ -1,0 +1,533 @@
+function void SevenForce.DirectionCheck()
+{
+    A2 = 0xffffb000
+    SevenForce.Direction = (u16[A2 + 0x10] > objA0.position.x.u16 ? 1 : 0) // 0 = left, 1 = right
+
+    if SevenForce.Direction == 0
+    {
+        if SevenForce.EyeOffset != -4
+            SevenForce.EyeOffset--
+    }
+    else
+    {
+        if SevenForce.EyeOffset != 4
+            SevenForce.EyeOffset++
+    }
+}
+
+function void SevenForce.SetPlayerHurtPanic() // Code by HazelSpooder
+{
+    Audio.playAudio("gsh_explosion1", AudioContext.CONTEXT_SOUND)
+
+	A1 = 0xffffb000
+	u8[A1 + 0x34] = 0
+	A1 = 0xffffb04a
+	u8[A1 + 0x34] = 0
+
+    A1 = 0xffffb000
+    {		
+        playSound(0x35)
+        //u8[A1 + 0x05] = 0x04
+        objA1.flags2a |= char.flag.IN_AIR
+        objA1.flags2a &= ~(char.flag.ON_OBJECT | char.flag.PUSHING)
+        objA1.velocity.y = -0x200
+        if (objA1.flags2a & char.flag.FACING_LEFT)
+        {
+            objA1.velocity.x = 0x100
+            u8[A1 + 0x2a] |= 0x01
+        }
+        else if (objA1.flags2a | char.flag.FACING_LEFT)
+        {
+            objA1.velocity.x = -0x100
+        }
+        u16[A1 + 0x1c] = 0
+        objA1.state = char.state.GOT_HURT_PANIC      
+        
+        A1 = 0xffffb04a
+        tails.ai_routine = 0x0a
+        
+        // goodbye tails!
+        objA1.base_state = 0x06
+        objA1.flags2a |= char.flag.IN_AIR
+        objA1.flags2a &= ~(char.flag.ON_OBJECT | char.flag.PUSHING)
+        objA1.velocity.y = -0x100
+        if (objA1.flags2a & char.flag.FACING_LEFT)
+        {
+            objA1.velocity.x = 0x200
+            u8[A1 + 0x2a] |= 0x01
+        }
+        else if (objA1.flags2a | char.flag.FACING_LEFT)
+        {
+            objA1.velocity.x = -0x200
+        }
+        u16[A1 + 0x1c] = 0
+        objA1.state = char.state.GOT_HURT_PANIC
+    }
+}
+
+function void SevenForce.StayInBoundary()
+{
+    if (objA0.position.x.u16 < 0x580)
+    {
+        objA0.position.x.u16 = 0x580
+
+        if SevenForce.Phase == 2
+            objA0.velocity.x = 0
+    }
+
+    if (objA0.position.x.u16 > 0xff0)
+    {
+        objA0.position.x.u16 = 0xff0
+
+        if SevenForce.Phase == 2
+            objA0.velocity.x = 0
+    }
+}
+
+function void SevenForce.UpdateHitFlashing()
+{
+    if SevenForce.HitFlashTimer
+        SevenForce.HitFlashTimer--
+}
+
+function void SevenForce.ProjectileUnloader()
+{
+    if (objA0.position.x.u16 < 0x600) || (objA0.position.x.u16 > 0x900) || (objA0.position.y.u16 < 0x280) || (objA0.position.y.u16 > 0x400)
+    {
+        UnloadObject()
+        return
+    }
+}
+
+function void SevenForce.SpillRings1()
+{
+    D6 = global.inv_gravity ? 0x01a662 : 0x01a64a
+#if STANDALONE
+    // Standalone uses a higher limit
+    u16 maxRings = 20
+#else
+    // Limit to 32 rings spilled
+    u16 maxRings = 20
+#endif
+
+    A1 = A0
+    D5 = 20
+    D5.u16 = min(D5.u16, maxRings)
+    D4.u16 = 0x288
+    SevenForce.SpillRings2()
+}
+
+function void SevenForce.SpillRings2()
+{
+	while (D5.s16 >= 0)
+	{
+		objA1.update_address = D6
+		objA1.render_flags = (render_flag.WORLD | render_flag.VISIBLE)
+		objA1.base_state += 2
+		objA1.box_size.x = 8
+		objA1.sprite_priority = 0x180
+		objA1.sprite_attributes = (sprite_attribute.PRIORITY | sprite_attribute.PALETTE.LINE1 | 0x06bc)
+		objA1.mapping_offset = 0x01a99a
+		objA1.position.x.u16 = objA0.position.x.u16
+		objA1.position.y.u16 = objA0.position.y.u16
+		u8[A1 + 0x1e] = 8
+		u8[A1 + 0x1f] = 8
+		objA1.collision_attributes = (collision.flag.ITEM | collision.size.6x6)
+
+		spilled_rings.speed = 0xff
+		if (D4.s16 >= 0)
+		{
+			// Entered only for every second ring (the others use x-mirrored directions)
+			u8 angle = D4.u8
+			u8 shift = D4.u16 >> 8
+			D2.s16 = lookupSin(angle) << shift
+			D3.s16 = lookupCos(angle) << shift
+
+			// Go on with next angle (and possibly switch to a lower shift)
+			if (D4.u8 < 0xf0)
+			{
+				D4.u8 += 0x10
+			}
+			else
+			{
+				D4.u16 -= 0x170
+				if (D4.s16 < 0)
+				{
+					D4.s16 = 0x288
+				}
+			}
+		}
+		objA1.velocity.x = D2.u16
+		objA1.velocity.y = D3.u16
+		D2.s16 = -D2.s16
+		D4.s16 = -D4.s16
+
+		// Next ring
+		--D5.s16
+		if (D5.s16 < 0)
+			break
+		if (!allocDynamicObjectAfterA0())
+			break
+	}
+
+	playSound(SFX_SPILLRINGS)
+
+	if (global.inv_gravity)
+	{
+		fn01a7e8()
+	}
+	else
+	{
+		fn01a75c()
+	}
+}
+
+function void SevenForce.Transform()
+{
+    SevenForce.Phase++
+    addScore(100)
+    SetPaletteToBlack()
+    SevenForce.FlashOpacity = 255
+    SevenForce.SpawnTransformDebris()
+    SevenForce.SpillRings1()
+
+    playSound(0x6e)
+    Audio.playAudio("gsh_transform", AudioContext.CONTEXT_SOUND)
+
+    spawnChildObject(0x083d84, 0x00, 0, 0)
+
+    SevenForce.TriggerTitleActive = false
+}
+
+function void SevenForce.SpawnTransformDebris()
+{
+    spawnChildObject(0x210228, 0x00, 0, 0) // Up Left
+    objA1.mapping_offset = 0x01a99a
+    objA1.sprite_attributes = (sprite_attribute.PRIORITY | 0x06bc)
+    objA1.render_flags = render_flag.WORLD
+    objA1.sprite_priority = 0x100
+    objA1.hitbox_extends.x = 8
+    objA1.hitbox_extends.y = 8
+    objA1.velocity.x = -0x200
+    objA1.velocity.y = -0x200
+    objA1.box_size.x = 16
+    objA1.box_size.y = 16
+
+    spawnChildObject(0x210228, 0x00, 0, 0) // Up
+    objA1.mapping_offset = 0x01a99a
+    objA1.sprite_attributes = (sprite_attribute.PRIORITY | 0x06bc)
+    objA1.render_flags = render_flag.WORLD
+    objA1.sprite_priority = 0x100
+    objA1.hitbox_extends.x = 8
+    objA1.hitbox_extends.y = 8
+    objA1.velocity.x = -0x000
+    objA1.velocity.y = -0x200
+    objA1.box_size.x = 16
+    objA1.box_size.y = 16
+
+    spawnChildObject(0x210228, 0x00, 0, 0) // Up Right
+    objA1.mapping_offset = 0x01a99a
+    objA1.sprite_attributes = (sprite_attribute.PRIORITY | 0x06bc)
+    objA1.render_flags = render_flag.WORLD
+    objA1.sprite_priority = 0x100
+    objA1.hitbox_extends.x = 8
+    objA1.hitbox_extends.y = 8
+    objA1.velocity.x = 0x200
+    objA1.velocity.y = -0x200
+    objA1.box_size.x = 16
+    objA1.box_size.y = 16
+
+    spawnChildObject(0x210228, 0x00, 0, 0) // Right
+    objA1.mapping_offset = 0x01a99a
+    objA1.sprite_attributes = (sprite_attribute.PRIORITY | 0x06bc)
+    objA1.render_flags = render_flag.WORLD
+    objA1.sprite_priority = 0x100
+    objA1.hitbox_extends.x = 8
+    objA1.hitbox_extends.y = 8
+    objA1.velocity.x = 0x200
+    objA1.velocity.y = 0x000
+    objA1.box_size.x = 16
+    objA1.box_size.y = 16
+
+    spawnChildObject(0x210228, 0x00, 0, 0) // Down Right
+    objA1.mapping_offset = 0x01a99a
+    objA1.sprite_attributes = (sprite_attribute.PRIORITY | 0x06bc)
+    objA1.render_flags = render_flag.WORLD
+    objA1.sprite_priority = 0x100
+    objA1.hitbox_extends.x = 8
+    objA1.hitbox_extends.y = 8
+    objA1.velocity.x = 0x200
+    objA1.velocity.y = 0x200
+    objA1.box_size.x = 16
+    objA1.box_size.y = 16
+
+    spawnChildObject(0x210228, 0x00, 0, 0) // Down
+    objA1.mapping_offset = 0x01a99a
+    objA1.sprite_attributes = (sprite_attribute.PRIORITY | 0x06bc)
+    objA1.render_flags = render_flag.WORLD
+    objA1.sprite_priority = 0x100
+    objA1.hitbox_extends.x = 8
+    objA1.hitbox_extends.y = 8
+    objA1.velocity.x = 0x000
+    objA1.velocity.y = 0x200
+    objA1.box_size.x = 16
+    objA1.box_size.y = 16
+
+    spawnChildObject(0x210228, 0x00, 0, 0) // Down Left
+    objA1.mapping_offset = 0x01a99a
+    objA1.sprite_attributes = (sprite_attribute.PRIORITY | 0x06bc)
+    objA1.render_flags = render_flag.WORLD
+    objA1.sprite_priority = 0x100
+    objA1.hitbox_extends.x = 8
+    objA1.hitbox_extends.y = 8
+    objA1.velocity.x = -0x200
+    objA1.velocity.y = 0x200
+    objA1.box_size.x = 16
+    objA1.box_size.y = 16
+
+    spawnChildObject(0x210228, 0x00, 0, 0) // Left
+    objA1.mapping_offset = 0x01a99a
+    objA1.sprite_attributes = (sprite_attribute.PRIORITY | 0x06bc)
+    objA1.render_flags = render_flag.WORLD
+    objA1.sprite_priority = 0x100
+    objA1.hitbox_extends.x = 8
+    objA1.hitbox_extends.y = 8
+    objA1.velocity.x = -0x200
+    objA1.velocity.y = 0x000
+    objA1.box_size.x = 16
+    objA1.box_size.y = 16
+}
+
+//# address-hook(0x210228)
+function void SevenForce.TransformDebris.Update()
+{
+    objA0.state += 1
+    SevenForce.ProjectileUnloader()
+
+    Enemy.DrawDynamicObject()
+    UpdateMovementStraightSimple()
+
+    if (objA0.state > 60)
+    {
+        UnloadObject()
+        return
+    }
+}
+
+function bool Standalone.onWriteToSpriteTable(s16 px, s16 py, u16 renderQueue)
+{
+    // Spike
+    if (objA0.update_address == 0x210228)
+    {
+        if objA0.state > 40
+        {
+            if (level.framecounter.low & 0x01)
+                Renderer.drawCustomSprite("SevenForce_Debris", px, py, 0, render_flag.WORLD | SPRITE_FLAG_PRIO, renderQueue - 1500, 0, 255)
+        }
+        else
+        {
+            Renderer.drawCustomSprite("SevenForce_Debris", px, py, 0, render_flag.WORLD | SPRITE_FLAG_PRIO, renderQueue - 1500, 0, 255)
+        }
+        return true
+    }
+
+    return base.Standalone.onWriteToSpriteTable(px, py, renderQueue)
+}
+
+function void DrawBossHealthBar(u8 boss.id, u8 bar.health, u8 bar.max)
+{
+    base.DrawBossHealthBar(boss.id, bar.health, bar.max)
+}
+
+//# address-hook(0x00244e) end(0x002506)
+function void LevelPaletteUpdate.ICZ()
+{
+    if SevenForce.FlashOpacity
+        return
+
+	--u16[0xfffff634]
+	if (s16[0xfffff634] < 0)
+	{
+		u16[0xfffff634] = 5
+		A0 = 0x002fd6
+		D0.u16 = u16[0xfffff632]
+		u16[0xfffff632] = (u16[0xfffff632] + 4) % 64
+		u32[0xfffffc5c] = u32[A0 + D0.s16]
+	}
+
+	--u16[0xfffff658]
+	if (s16[0xfffff658] < 0)
+	{
+		u16[0xfffff658] = 9
+		A0 = 0x003016
+		D0.u16 = u16[0xfffff652]
+		u16[0xfffff652] = (u16[0xfffff652] + 4) % 72
+		if (u16[0xffffeee8] != 0)
+			u32[0xfffffc7c] = u32[A0 + D0.s16]
+	}
+
+	--u16[0xfffff65a]
+	if (s16[0xfffff65a] < 0)
+	{
+		u16[0xfffff65a] = 7
+		A0 = 0x00305e
+		D0.u16 = u16[0xfffff654]
+		u16[0xfffff654] = (u16[0xfffff654] + 4) % 24
+		if (u16[0xffffeee8] != 0)
+			u32[0xfffffc78] = u32[A0 + D0.s16]
+
+		A0 = 0x003076
+		D0.u16 = u16[0xfffff656]
+		u16[0xfffff656] = (u16[0xfffff656] + 4) % 64
+		u32[0xfffffc58] = u32[A0 + D0.s16]
+	}
+}
+
+//# address-hook(0x083708) end(0x083798)
+function void fn083708()
+{
+    if global.zone != 0x05
+    {
+        base.fn083708()
+        return
+    }
+	// Check for signpost hit
+	if (level.signpost.address != 0)
+	{
+		A1 = 0xffff0000 + level.signpost.address
+		if (objA1.update_address == 0x0837b2)
+		{
+			u16 px = objA1.position.x.u16
+			u16 py = objA1.position.y.u16
+
+			A2 = 0x08379e
+			u16 minX = objA0.position.x.u16 + u16[(A2+=2)-2]
+			u16 maxX = minX + u16[(A2+=2)-2]
+			u16 minY = objA0.position.y.u16 + u16[(A2+=2)-2]
+			u16 maxY = minY + u16[(A2+=2)-2]
+
+			if (px >= minX && px < maxX)
+			{
+				if (py >= minY && py < maxY && (objA1.flags38 & 0x01))
+				{
+					objA1.flags38 &= ~0x01
+
+					objA0.update_address = 0x01d566		// Make this a real monitor
+					objA0.base_state = 0x02
+					u8[A0 + 0x3c] = 0x04
+					objA0.velocity.y = -0x500
+				#if STANDALONE
+					if (objA0.state == 0x0b)	// Classic Shield's state is not completely supported
+						objA0.state = 0x05
+				#endif
+
+					if (objA0.render_flags & render_flag.FLIP_X)
+					{
+						objA0.render_flags &= ~render_flag.FLIP_X
+						objA0.sprite_attributes |= sprite_attribute.PRIORITY
+						objA0.flags2a = 0
+					}
+
+					DrawOrUnloadObject()
+					return
+				}
+			#if STANDALONE
+				else if (objA1.velocity.x != 0)
+				{
+					// Only needed for the hint
+					u8 maximum = 0x50 + abs(s8(global.framecounter & 0x1f) - 0x10) * 0x02
+					u8[A0 + 0x49] = min(u8[A0 + 0x49] + 4, maximum)
+				}
+			#endif
+			}
+			else
+			{
+				bool unload = (objA1.flags38 & 0x01)
+			#if STANDALONE
+				// As a bug fix, also check "countdown_value" to make sure it's not the exact frame where the signpost hit the ground, but a later one
+				//  -> Otherwise hidden monitors can get locked too early
+				unload = unload && (s16[A1 + 0x2e] < 0x40)
+
+				// Only needed for the hint
+				u8[A0 + 0x49] = (u8[A0 + 0x49] > 4) ? (u8[A0 + 0x49] - 4) : 0
+			#endif
+
+				if (unload)
+				{
+					// Signpost touched ground without hitting a monitor
+					objA0.update_address = 0x01b588		// Address of "DrawOrUnloadObject"
+				}
+			}
+
+		#if STANDALONE
+			if (Game.getSetting(SETTING_HIDDEN_MONITOR_HINT) && u8[A0 + 0x49] > 0x20)
+			{
+				// Draw a hint
+				px = objA0.position.x.u16 - camera.foreground.x.u16 - 0x10
+				py = objA0.position.y.u16 - camera.foreground.y.u16 - 0x10
+				Renderer.drawVdpSpriteWithAlpha(px, py, 0x0f, sprite_attribute.PRIORITY | 0x04c4, 0xd000, u8[A0 + 0x49] - 0x20)
+			}
+		#endif
+		}
+	}
+
+	CheckForUnloadObject()
+}
+
+//# address-hook(0x0837d8) end(0x08382e)
+function void fn0837d8()
+{
+    if global.zone != 0x05
+    {
+        base.fn0837d8()
+        return
+    }
+	if (SetupObjectAttributesSlotted(0x083b04))
+		return
+
+	if (u8[0xffffb000 + 0x0a] & 0x80)
+		u8[A0 + 0x0a] |= 0x80
+
+	level.signpost.address = A0.u16
+
+	objA0.hitbox_extends.x = 0x18
+	objA0.hitbox_extends.y = 0x1e
+	u32[A0 + 0x30] = isMainCharacter(CHARACTER_KNUCKLES) ? 0x083b58 : 0x083b4a
+	objA0.position.y.u16 = camera.position.y.u16 - 0x20
+
+
+	// "spawnChildObjects(0x083b2e)" replaced by:
+	spawnChildObject(0x083a24, 0x00, 0, 24)
+}
+
+function void fn083a70()
+{
+    if global.zone != 0x05
+    {
+        base.fn083a70()
+        return
+    }
+	A1 = 0xffff0000 + D0.u16
+	if (u8[A1 + 0x20] != 2)
+		return
+	if (objA1.velocity.y >= 0)
+		return
+
+	// Touched by character
+	objA0.state = 0x20
+	D0.u16 = objA0.position.x.u16 - objA1.position.x.u16
+	if (D0.u16 == 0)
+		D0 = 8
+
+	D0.u16 <<= 4
+	objA0.velocity.x = D0.u16
+	objA0.velocity.y = -0x200
+
+	playSound(0xb8)
+
+	// "spawnSimpleChildObjects(0x083b3c)" replaced by:
+	spawnSimpleChildObjects(0x02cce0, 1)
+
+	A3 = A1
+	addScore(10)
+}

@@ -1,0 +1,507 @@
+// Eagle Force (5th phase, eagle)
+
+global u8 EagleForce.State
+global u16 EagleForce.StateTimer
+
+global u16 EagleForce.Scale
+global u16 EagleForce.Rotation
+global bool EagleForce.RotationDirection
+
+global bool EagleForce.TailCreated
+
+/* PF States
+0 = waiting to drop
+1 = dropping
+*/
+
+// Renderer
+function bool Standalone.onWriteToSpriteTable(s16 px, s16 py, u16 renderQueue)
+{
+    // Body
+    if (objA0.update_address == 0x21023A)
+    {
+        Renderer.drawCustomSprite("EagleForce_Head", px, py - 28 - EagleForce.Rotation, 0, SPRITE_FLAG_PRIO | render_flag.WORLD, renderQueue - 1004, 0, 0xfffffffffff, EagleForce.Scale)
+
+        if EagleForce.State != 2
+        {
+            Renderer.drawCustomSprite("EagleForce_Wing", px + 24, py, 0, SPRITE_FLAG_PRIO | render_flag.WORLD, renderQueue - 1005, EagleForce.Rotation * 2, 0xfffffffffff, EagleForce.Scale)
+            Renderer.drawCustomSprite("EagleForce_Wing", px - 24, py, 0, SPRITE_FLAG_PRIO | render_flag.WORLD | SPRITE_FLAG_FLIP_X, renderQueue - 1005, -EagleForce.Rotation * 2, 0xfffffffffff, EagleForce.Scale)
+            Renderer.drawCustomSprite("EagleForce_WingEnd", px + 24, py, 0, SPRITE_FLAG_PRIO | render_flag.WORLD, renderQueue - 1005, EagleForce.Rotation * 3, 0xfffffffffff, EagleForce.Scale)
+            Renderer.drawCustomSprite("EagleForce_WingEnd", px - 24, py, 0, SPRITE_FLAG_PRIO | render_flag.WORLD | SPRITE_FLAG_FLIP_X, renderQueue - 1005, -EagleForce.Rotation * 3, 0xfffffffffff, EagleForce.Scale)
+        }
+        else
+        {
+            Renderer.drawCustomSprite("EagleForce_Wing", px + 24, py, 0, SPRITE_FLAG_PRIO | render_flag.WORLD, renderQueue - 1005, EagleForce.Rotation * 4, 0xfffffffffff, EagleForce.Scale)
+            Renderer.drawCustomSprite("EagleForce_Wing", px - 24, py, 0, SPRITE_FLAG_PRIO | render_flag.WORLD | SPRITE_FLAG_FLIP_X, renderQueue - 1005, -EagleForce.Rotation * 4, 0xfffffffffff, EagleForce.Scale)
+            Renderer.drawCustomSprite("EagleForce_WingEnd", px + 24, py, 0, SPRITE_FLAG_PRIO | render_flag.WORLD, renderQueue - 1005, EagleForce.Rotation * 6, 0xfffffffffff, EagleForce.Scale)
+            Renderer.drawCustomSprite("EagleForce_WingEnd", px - 24, py, 0, SPRITE_FLAG_PRIO | render_flag.WORLD | SPRITE_FLAG_FLIP_X, renderQueue - 1005, -EagleForce.Rotation * 6, 0xfffffffffff, EagleForce.Scale)
+        }
+
+        if (SevenForce.HitFlashTimer)
+        {
+            if (level.framecounter.low & 0x01)
+            {
+                Renderer.drawCustomSprite("SevenForce_MainBody_Hit", px, py - EagleForce.Rotation, 0, SPRITE_FLAG_PRIO | render_flag.WORLD, renderQueue - 1003, 0, 255)
+                Renderer.drawCustomSprite("SevenForce_MainEye", px + SevenForce.EyeOffset, py - EagleForce.Rotation, 0, SPRITE_FLAG_PRIO | render_flag.WORLD, renderQueue - 1002, 0, 255)
+            }
+            else
+            {
+                Renderer.drawCustomSprite("SevenForce_MainBody", px, py - EagleForce.Rotation, 0, SPRITE_FLAG_PRIO | render_flag.WORLD, renderQueue - 1003, 0, 255)
+                Renderer.drawCustomSprite("SevenForce_MainEye_Hit", px + SevenForce.EyeOffset, py - EagleForce.Rotation, 0, SPRITE_FLAG_PRIO | render_flag.WORLD, renderQueue - 1002, 0, 255)
+            }
+
+            Renderer.drawCustomSprite("SevenForce_MainIris", px + SevenForce.EyeOffset * 2, py - EagleForce.Rotation, 0, SPRITE_FLAG_PRIO | render_flag.WORLD, renderQueue - 1001, 0, 255)
+            Renderer.drawCustomSprite("SevenForce_MainIrisShine", px + SevenForce.EyeOffset, py - EagleForce.Rotation, 0, SPRITE_FLAG_PRIO | render_flag.WORLD, renderQueue - 1000, 0, 255)
+        }
+        else
+        {
+            Renderer.drawCustomSprite("SevenForce_MainBody", px, py - EagleForce.Rotation, 0, SPRITE_FLAG_PRIO | render_flag.WORLD, renderQueue - 1003, 0, 255)
+            Renderer.drawCustomSprite("SevenForce_MainEye", px + SevenForce.EyeOffset, py - EagleForce.Rotation, 0, SPRITE_FLAG_PRIO | render_flag.WORLD, renderQueue - 1002, 0, 255)
+
+            Renderer.drawCustomSprite("SevenForce_MainIris", px + SevenForce.EyeOffset * 2, py - EagleForce.Rotation, 0, SPRITE_FLAG_PRIO | render_flag.WORLD, renderQueue - 1001, 0, 255)
+            Renderer.drawCustomSprite("SevenForce_MainIrisShine", px + SevenForce.EyeOffset, py - EagleForce.Rotation, 0, SPRITE_FLAG_PRIO | render_flag.WORLD, renderQueue - 1000, 0, 255)
+        }
+        return true
+    }
+
+    // Spike
+    if (objA0.update_address == 0x21023C)
+    {
+        if EagleForce.State == 1
+        {
+            Renderer.drawCustomSprite("EagleForce_Tail", px, py - 48 - EagleForce.Rotation, 0, SPRITE_FLAG_PRIO | render_flag.WORLD, renderQueue - 1006, 0, 0xfffffffffff, EagleForce.Scale)
+            Renderer.drawCustomSprite("EagleForce_TailEnd", px, py - 64 - EagleForce.Rotation, 0, SPRITE_FLAG_PRIO | render_flag.WORLD, renderQueue - 1006, 0, 0xfffffffffff, EagleForce.Scale)
+        }
+        else
+        {
+            Renderer.drawCustomSprite("EagleForce_Tail", px, py - 48 - EagleForce.Rotation, 0, SPRITE_FLAG_PRIO | render_flag.WORLD, renderQueue - 1006, EagleForce.Rotation, 0xfffffffffff, EagleForce.Scale)
+            Renderer.drawCustomSprite("EagleForce_TailEnd", px, py - 64 - EagleForce.Rotation, 0, SPRITE_FLAG_PRIO | render_flag.WORLD, renderQueue - 1006, EagleForce.Rotation * 2, 0xfffffffffff, EagleForce.Scale)
+        }
+        return true
+    }
+
+    // Bullet
+    if (objA0.update_address == 0x21023E)
+    {
+        if objA0.subtype2c == 0x02
+        {
+            if !(level.framecounter.low & 0x01)
+                Renderer.drawCustomSprite("SpiderForce_Bullet_1", px, py, 0, SPRITE_FLAG_PRIO | render_flag.WORLD, renderQueue - 950, 0, 255)
+            else
+                Renderer.drawCustomSprite("SpiderForce_Bullet_0", px, py, 0, SPRITE_FLAG_PRIO | render_flag.WORLD, renderQueue - 950, 0, 255)
+        }
+        else
+        {
+            if !(level.framecounter.low & 0x01)
+                Renderer.drawCustomSprite("StormForce_Bullet_1", px, py, 0, SPRITE_FLAG_PRIO | render_flag.WORLD, renderQueue - 950, 0, 255)
+            else
+                Renderer.drawCustomSprite("StormForce_Bullet_0", px, py, 0, SPRITE_FLAG_PRIO | render_flag.WORLD, renderQueue - 950, 0, 255)
+        }
+        return true
+    }
+
+    return base.Standalone.onWriteToSpriteTable(px, py, renderQueue)
+}
+
+function void EagleForce.Intitalize()
+{   
+    if (allocDynamicObjectStd())
+    {
+        boss.remaining_hits = 8
+		EagleForce.State = 0
+        EagleForce.StateTimer = 180
+        objA1.update_address = 0x21023A // eagle force
+ 		objA1.mapping_offset = 0x01a99a
+		objA1.sprite_attributes = (sprite_attribute.PRIORITY | 0x06bc)
+		objA1.render_flags = render_flag.WORLD
+		objA1.sprite_priority = 0x100
+		objA1.hitbox_extends.x = 32
+		objA1.hitbox_extends.y = 32
+        objA1.position.y.u16 = objA0.position.y.u16
+        objA1.position.x.u16 = objA0.position.x.u16
+        objA1.box_size.x = 96
+        objA1.box_size.y = 96
+
+        objA1.collision_attributes = collision.size.32x32
+
+        SevenForce.HitFlashTimer = 0
+        SevenForce.Phase = 4
+
+        EagleForce.RotationDirection = 0 // Up
+        EagleForce.Rotation = 0
+        EagleForce.Scale = 0
+
+        EagleForce.TailCreated = false
+
+        A1 = 0xffff0000 + u16[0xfffffaae]
+        if (objA1.update_address == 0x08b660)
+        {
+            u8[A1 + 0x38] |= 0x20
+        }
+
+        playSound(0x84)
+        Audio.playAudio("gsh_impact1", AudioContext.CONTEXT_SOUND)
+    }
+}
+
+function void EagleTail.Intitalize()
+{
+    spawnChildObject(0x21023C, 0x00, 0, 0x3a)
+    objA1.mapping_offset = 0x01a99a
+    objA1.sprite_attributes = (sprite_attribute.PRIORITY | 0x06bc)
+    objA1.sprite_attributes = (sprite_attribute.PRIORITY | 0x06bc)
+    objA1.render_flags = render_flag.WORLD
+    objA1.sprite_priority = 0x100
+    objA1.box_size.x = 96
+    objA1.box_size.y = 96
+
+    EagleForce.TailCreated = true
+}
+
+//#address-hook(0x21023A)
+function void EagleForce.BaseUpdate()
+{
+    EagleForce.HealthUpdater()
+    EagleForce.StateMachine()
+    SevenForce.DirectionCheck()
+    SevenForce.StayInBoundary()
+    SevenForce.UpdateHitFlashing()
+
+    Enemy.DrawDynamicObject()
+
+    if EagleForce.State == 0
+    {
+        if EagleForce.Scale <= 0xffff
+            EagleForce.Scale += 0x160
+        else
+            EagleForce.Scale = 0xffff
+    }
+    else
+    {
+        EagleForce.Scale = 0xffff
+    }
+
+    if Mods.isModActive("Bossbar") && (!SevenForce.FlashOpacity)
+    {
+        DrawBossHealthBar(0xe7, boss.remaining_hits, 8)
+    }
+}
+
+//#address-hook(0x21023C)
+function void EagleTail.BaseUpdate()
+{
+    if (SevenForce.Phase != 4)
+    {
+        UnloadObject()
+        return
+    }
+
+    Enemy.DrawDynamicObject()
+    MoveWithParent()
+}
+
+function void EagleForce.HealthUpdater()
+{
+    if (objA0.collision_attributes != 0)
+        return
+
+    if (boss.remaining_hits == 0) && (!SevenForce.FlashOpacity)
+    {
+        requestLoadingPatterns(0x5f)
+
+        SevenForce.Transform()
+
+        BusterForce.Intitalize()
+        UnloadObject()
+        return
+    }
+
+    if (objA0.state == 0) && (!SevenForce.FlashOpacity)
+    {
+        objA0.state = 0x20
+        playSound(0x6e)
+        objA0.flags2a |= 0x40
+        SevenForce.HitFlashTimer = 0x20
+    }
+
+    // code for hit flashing and other stuff here
+
+    --objA0.state
+    if (objA0.state == 0)
+    {
+        objA0.flags2a &= ~0x40
+        u8[A0 + 0x28] = u8[A0 + 0x25]
+    }
+}
+
+function void EagleForce.StateMachine()
+{
+    UpdateMovementStraightSimple()
+
+    if EagleForce.StateTimer
+        EagleForce.StateTimer--
+
+    if EagleForce.State == 0 // increment state to spawn tail correctly
+    {
+        if EagleForce.TailCreated == false
+            EagleTail.Intitalize()
+
+        boss.remaining_hits = 8
+
+        if EagleForce.StateTimer == 1
+        {
+            EagleForce.State = 1
+            Audio.playAudio("gsh_strain", AudioContext.CONTEXT_SOUND)
+            objA0.velocity.y = -0x300
+            EagleForce.Rotation = 0
+        }
+    }
+
+    if EagleForce.State == 1 // Dropping down
+    {
+        MoveWithGravity20()
+        if objA0.position.y.u16 > 0x0410
+        {
+            EagleForce.State = 2
+            objA0.velocity.y = 0
+            objA0.position.x.u16 = u16[0xffffb010] // p1 x
+            EagleForce.Rotation = 0
+        }
+
+        if !(level.framecounter.low & 0x01) && EagleForce.Rotation != -32
+            EagleForce.Rotation--
+    }
+
+    if EagleForce.State == 2 // Flying Up
+    {
+        if objA0.position.y.u16 < 0x02e0
+        {
+            EagleForce.State = 3
+            objA0.velocity.y = 0
+            EagleForce.StateTimer = 360
+            SevenForce.StudioTriggerMoment()
+        }
+        else
+        {
+            objA0.velocity.y = -0x100
+        }
+
+        if EagleForce.RotationDirection == 0
+        {
+            EagleForce.Rotation--
+
+            if EagleForce.Rotation == -12
+            {
+                EagleForce.RotationDirection = 1
+                EagleForce.Bullet.CreateCross()
+            }
+        }
+        else
+        {
+            EagleForce.Rotation++
+
+            if EagleForce.Rotation == 12
+            {
+                EagleForce.RotationDirection = 0
+                EagleForce.Bullet.CreatePlus()
+            }
+        }
+    }
+
+    if EagleForce.State == 3 // Flying around and shooting
+    {
+        objA0.velocity.x += SevenForce.Direction ? 0x8 : -0x8
+
+        if EagleForce.RotationDirection == 0
+        {
+            EagleForce.Rotation--
+
+            if EagleForce.Rotation == -24
+                EagleForce.RotationDirection = 1
+        }
+        else
+        {
+            EagleForce.Rotation++
+
+            if EagleForce.Rotation == 24
+                EagleForce.RotationDirection = 0
+        }
+
+        if EagleForce.StateTimer == 1
+        {
+            EagleForce.State = 1
+            Audio.playAudio("gsh_strain", AudioContext.CONTEXT_SOUND)
+            objA0.velocity.x = 0
+            objA0.velocity.y = -0x300
+        }
+
+        if (EagleForce.StateTimer == 260) ||(EagleForce.StateTimer == 240) || (EagleForce.StateTimer == 220) || (EagleForce.StateTimer == 200) || (EagleForce.StateTimer == 180) || (EagleForce.StateTimer == 160) || (EagleForce.StateTimer == 140) || (EagleForce.StateTimer == 120)
+        {
+            playSound(0x4d)
+            spawnChildObject(0x21023E, 0x00, 0, -0x08 - EagleForce.Rotation) // Bullet (Down)
+            objA1.mapping_offset = 0x01a99a
+            objA1.sprite_attributes = (sprite_attribute.PRIORITY | 0x06bc)
+            objA1.render_flags = render_flag.WORLD
+            objA1.sprite_priority = 0x100
+            objA1.hitbox_extends.x = 8
+            objA1.hitbox_extends.y = 8
+            objA1.collision_attributes = (collision.size.4x4 | collision.flag.THREAT)
+            objA1.state = 0
+            objA1.velocity.x = 0
+            objA1.velocity.y = 0x300
+            objA1.subtype2c = 0x00
+            objA1.box_size.x = 8
+            objA1.box_size.y = 8
+        }
+    }
+}
+
+//#address-hook(0x21023E)
+function void EagleForce.Bullet.BaseUpdate()
+{
+    if !(level.framecounter.low & 0x01)
+        objA0.state += 1
+
+    SevenForce.ProjectileUnloader()
+
+    Enemy.DrawDynamicObject()
+    UpdateMovementStraightSimple()
+
+    if (objA0.state > 250)
+    {
+        UnloadObject()
+        return
+    }
+}
+
+function void EagleForce.Bullet.CreateCross()
+{
+    playSound(0x4d)
+    playSound(0x7a)
+
+    spawnChildObject(0x21023E, 0x00, 0, -0x08 - EagleForce.Rotation) // Bullet (Up Left)
+    objA1.mapping_offset = 0x01a99a
+    objA1.sprite_attributes = (sprite_attribute.PRIORITY | 0x06bc)
+    objA1.render_flags = render_flag.WORLD
+    objA1.sprite_priority = 0x100
+    objA1.hitbox_extends.x = 8
+    objA1.hitbox_extends.y = 8
+    objA1.collision_attributes = (collision.size.8x8 | collision.flag.THREAT)
+    objA1.state = 0
+    objA1.velocity.x = -0x300
+    objA1.velocity.y = -0x300
+    objA1.subtype2c = 0x02
+    objA1.box_size.x = 8
+    objA1.box_size.y = 8
+
+    spawnChildObject(0x21023E, 0x00, 0, -0x08 - EagleForce.Rotation) // Bullet (Up Right)
+    objA1.mapping_offset = 0x01a99a
+    objA1.sprite_attributes = (sprite_attribute.PRIORITY | 0x06bc)
+    objA1.render_flags = render_flag.WORLD
+    objA1.sprite_priority = 0x100
+    objA1.hitbox_extends.x = 8
+    objA1.hitbox_extends.y = 8
+    objA1.collision_attributes = (collision.size.8x8 | collision.flag.THREAT)
+    objA1.state = 0
+    objA1.velocity.x = 0x300
+    objA1.velocity.y = -0x300
+    objA1.subtype2c = 0x02
+    objA1.box_size.x = 8
+    objA1.box_size.y = 8
+
+    spawnChildObject(0x21023E, 0x00, 0, -0x08 - EagleForce.Rotation) // Bullet (Down Left)
+    objA1.mapping_offset = 0x01a99a
+    objA1.sprite_attributes = (sprite_attribute.PRIORITY | 0x06bc)
+    objA1.render_flags = render_flag.WORLD
+    objA1.sprite_priority = 0x100
+    objA1.hitbox_extends.x = 8
+    objA1.hitbox_extends.y = 8
+    objA1.collision_attributes = (collision.size.8x8 | collision.flag.THREAT)
+    objA1.state = 0
+    objA1.velocity.x = -0x300
+    objA1.velocity.y = 0x300
+    objA1.subtype2c = 0x02
+    objA1.box_size.x = 8
+    objA1.box_size.y = 8
+
+    spawnChildObject(0x21023E, 0x00, 0, -0x08 - EagleForce.Rotation) // Bullet (Down Right)
+    objA1.mapping_offset = 0x01a99a
+    objA1.sprite_attributes = (sprite_attribute.PRIORITY | 0x06bc)
+    objA1.render_flags = render_flag.WORLD
+    objA1.sprite_priority = 0x100
+    objA1.hitbox_extends.x = 8
+    objA1.hitbox_extends.y = 8
+    objA1.collision_attributes = (collision.size.8x8 | collision.flag.THREAT)
+    objA1.state = 0
+    objA1.velocity.x = 0x300
+    objA1.velocity.y = 0x300
+    objA1.subtype2c = 0x02
+    objA1.box_size.x = 8
+    objA1.box_size.y = 8
+}
+
+function void EagleForce.Bullet.CreatePlus()
+{
+    playSound(0x4d)
+    playSound(0x7a)
+
+    spawnChildObject(0x21023E, 0x00, 0, -0x08 - EagleForce.Rotation) // Bullet (Left)
+    objA1.mapping_offset = 0x01a99a
+    objA1.sprite_attributes = (sprite_attribute.PRIORITY | 0x06bc)
+    objA1.render_flags = render_flag.WORLD
+    objA1.sprite_priority = 0x100
+    objA1.hitbox_extends.x = 8
+    objA1.hitbox_extends.y = 8
+    objA1.collision_attributes = (collision.size.8x8 | collision.flag.THREAT)
+    objA1.state = 0
+    objA1.velocity.x = -0x300
+    objA1.velocity.y = 0
+    objA1.subtype2c = 0x02
+    objA1.box_size.x = 8
+    objA1.box_size.y = 8
+
+    spawnChildObject(0x21023E, 0x00, 0, -0x08 - EagleForce.Rotation) // Bullet (Up)
+    objA1.mapping_offset = 0x01a99a
+    objA1.sprite_attributes = (sprite_attribute.PRIORITY | 0x06bc)
+    objA1.render_flags = render_flag.WORLD
+    objA1.sprite_priority = 0x100
+    objA1.hitbox_extends.x = 8
+    objA1.hitbox_extends.y = 8
+    objA1.collision_attributes = (collision.size.8x8 | collision.flag.THREAT)
+    objA1.state = 0
+    objA1.velocity.x = 0
+    objA1.velocity.y = -0x300
+    objA1.subtype2c = 0x02
+    objA1.box_size.x = 8
+    objA1.box_size.y = 8
+
+    spawnChildObject(0x21023E, 0x00, 0, -0x08 - EagleForce.Rotation) // Bullet (Right)
+    objA1.mapping_offset = 0x01a99a
+    objA1.sprite_attributes = (sprite_attribute.PRIORITY | 0x06bc)
+    objA1.render_flags = render_flag.WORLD
+    objA1.sprite_priority = 0x100
+    objA1.hitbox_extends.x = 8
+    objA1.hitbox_extends.y = 8
+    objA1.collision_attributes = (collision.size.8x8 | collision.flag.THREAT)
+    objA1.state = 0
+    objA1.velocity.x = 0x300
+    objA1.velocity.y = 0
+    objA1.subtype2c = 0x02
+    objA1.box_size.x = 8
+    objA1.box_size.y = 8
+
+    spawnChildObject(0x21023E, 0x00, 0, -0x08 - EagleForce.Rotation) // Bullet (Down)
+    objA1.mapping_offset = 0x01a99a
+    objA1.sprite_attributes = (sprite_attribute.PRIORITY | 0x06bc)
+    objA1.render_flags = render_flag.WORLD
+    objA1.sprite_priority = 0x100
+    objA1.hitbox_extends.x = 8
+    objA1.hitbox_extends.y = 8
+    objA1.collision_attributes = (collision.size.8x8 | collision.flag.THREAT)
+    objA1.state = 0
+    objA1.velocity.x = 0
+    objA1.velocity.y = 0x300
+    objA1.subtype2c = 0x02
+    objA1.box_size.x = 8
+    objA1.box_size.y = 8
+}

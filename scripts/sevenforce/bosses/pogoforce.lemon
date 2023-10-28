@@ -1,0 +1,315 @@
+// Pogo Force (1st phase, pogo-stick)
+
+global u8 PogoForce.State
+global u16 PogoForce.StateTimer
+
+global u16 PogoForce.BodyOffset
+
+/* PF States
+0 = waiting to drop
+1 = dropping
+*/
+
+// Renderer
+function bool Standalone.onWriteToSpriteTable(s16 px, s16 py, u16 renderQueue)
+{
+    // Body
+    if (objA0.update_address == 0x210222)
+    {
+        Renderer.drawCustomSprite("PogoForce_Body", px, py + PogoForce.BodyOffset, 0, render_flag.WORLD | SPRITE_FLAG_PRIO, renderQueue - 1005, 0, 255)
+
+        if (SevenForce.HitFlashTimer)
+        {
+            if (level.framecounter.low & 0x01)
+            {
+                Renderer.drawCustomSprite("SevenForce_MainBody_Hit", px, py + PogoForce.BodyOffset, 0, render_flag.WORLD | SPRITE_FLAG_PRIO, renderQueue - 1003, 0, 255)
+                Renderer.drawCustomSprite("SevenForce_MainEye", px + SevenForce.EyeOffset, py + PogoForce.BodyOffset, 0, render_flag.WORLD | SPRITE_FLAG_PRIO, renderQueue - 1002, 0, 255)
+            }
+            else
+            {
+                Renderer.drawCustomSprite("SevenForce_MainBody", px, py + PogoForce.BodyOffset, 0, render_flag.WORLD | SPRITE_FLAG_PRIO, renderQueue - 1003, 0, 255)
+                Renderer.drawCustomSprite("SevenForce_MainEye_Hit", px + SevenForce.EyeOffset, py + PogoForce.BodyOffset, 0, render_flag.WORLD | SPRITE_FLAG_PRIO, renderQueue - 1002, 0, 255)
+            }
+
+            Renderer.drawCustomSprite("SevenForce_MainIris", px + SevenForce.EyeOffset * 2, py + PogoForce.BodyOffset, 0, render_flag.WORLD | SPRITE_FLAG_PRIO, renderQueue - 1001, 0, 255)
+            Renderer.drawCustomSprite("SevenForce_MainIrisShine", px + SevenForce.EyeOffset, py + PogoForce.BodyOffset, 0, render_flag.WORLD | SPRITE_FLAG_PRIO, renderQueue - 1000, 0, 255)
+        }
+        else
+        {
+            Renderer.drawCustomSprite("SevenForce_MainBody", px, py + PogoForce.BodyOffset, 0, render_flag.WORLD | SPRITE_FLAG_PRIO, renderQueue - 1003, 0, 255)
+            Renderer.drawCustomSprite("SevenForce_MainEye", px + SevenForce.EyeOffset, py + PogoForce.BodyOffset, 0, render_flag.WORLD | SPRITE_FLAG_PRIO, renderQueue - 1002, 0, 255)
+
+            Renderer.drawCustomSprite("SevenForce_MainIris", px + SevenForce.EyeOffset * 2, py + PogoForce.BodyOffset, 0, render_flag.WORLD | SPRITE_FLAG_PRIO, renderQueue - 1001, 0, 255)
+            Renderer.drawCustomSprite("SevenForce_MainIrisShine", px + SevenForce.EyeOffset, py + PogoForce.BodyOffset, 0, render_flag.WORLD | SPRITE_FLAG_PRIO, renderQueue - 1000, 0, 255)
+        }
+        return true
+    }
+
+    // Spike
+    if (objA0.update_address == 0x210224)
+    {
+        Renderer.drawCustomSprite("PogoForce_Spike", px, py, 0, render_flag.WORLD, renderQueue - 1006, 0, 255)
+        return true
+    }
+
+    // Shockwave
+    if (objA0.update_address == 0x210226)
+    {
+        if objA0.subtype2c == 0x00
+        {
+            if objA0.state > 6
+            {
+                if (level.framecounter.low & 0x01)
+                    Renderer.drawCustomSprite("PogoForce_Shockwave", px, py, 0, render_flag.WORLD | SPRITE_FLAG_FLIP_X, renderQueue - 1000, 0, 255)
+            }
+            else
+            {
+                Renderer.drawCustomSprite("PogoForce_Shockwave", px, py, 0, render_flag.WORLD | SPRITE_FLAG_FLIP_X, renderQueue - 1000, 0, 255)
+            }
+        }
+        else
+        {
+            if objA0.state > 6
+            {
+                if (level.framecounter.low & 0x01)
+                    Renderer.drawCustomSprite("PogoForce_Shockwave", px, py, 0, render_flag.WORLD, renderQueue - 1000, 0, 255)
+            }
+            else
+            {
+                Renderer.drawCustomSprite("PogoForce_Shockwave", px, py, 0, render_flag.WORLD, renderQueue - 1000, 0, 255)
+            }
+        }
+        return true
+    }
+
+    // Snow
+    if (objA0.update_address == 0x08b73a) && (SevenForce.TriggerTitleTimer)
+    {
+        return true
+    }
+
+    return base.Standalone.onWriteToSpriteTable(px, py, renderQueue)
+}
+
+function void PogoForce.Intitalize()
+{   
+    playMusic(MUSIC_CTRL_FADEOUT)
+    SevenForce.TriggerTitleActive = false
+    if (allocDynamicObjectStd())
+    {
+        boss.remaining_hits = 8
+		PogoForce.State = 0
+        PogoForce.StateTimer = 360
+        PogoForce.BodyOffset = 0
+        objA1.update_address = 0x210222 // pogo force
+ 		objA1.mapping_offset = 0x01a99a
+		objA1.sprite_attributes = (sprite_attribute.PRIORITY | 0x06bc)
+		objA1.render_flags = render_flag.WORLD
+		objA1.sprite_priority = 0x100
+		objA1.hitbox_extends.x = 32
+		objA1.hitbox_extends.y = 32
+        objA1.position.y.u16 = 0x0230
+        objA1.position.x.u16 = 0x07d0
+        objA1.box_size.x = 96
+        objA1.box_size.y = 32
+
+        objA1.collision_attributes = collision.size.32x32
+
+        SevenForce.Phase = 0
+
+        SevenForce.HitFlashTimer = 0
+        SevenForce.FlashOpacity = 0
+    }
+}
+
+function void PogoSpike.Intitalize()
+{
+    spawnChildObject(0x210224, 0x00, 0, 0x3a)
+    objA1.mapping_offset = 0x01a99a
+    objA1.sprite_attributes = (sprite_attribute.PRIORITY | 0x06bc)
+    objA1.sprite_attributes = (sprite_attribute.PRIORITY | 0x06bc)
+    objA1.render_flags = render_flag.WORLD
+    objA1.sprite_priority = 0x100
+    objA1.hitbox_extends.x = 24
+    objA1.hitbox_extends.y = 24
+    objA1.collision_attributes = (collision.size.24x12 | collision.flag.THREAT)
+    objA1.box_size.x = 32
+    objA1.box_size.y = 64
+}
+
+//#address-hook(0x210222)
+function void PogoForce.BaseUpdate()
+{
+    PogoForce.HealthUpdater()
+    PogoForce.StateMachine()
+    SevenForce.DirectionCheck()
+    SevenForce.StayInBoundary()
+    SevenForce.UpdateHitFlashing()
+
+    Enemy.DrawDynamicObject()
+
+    if Mods.isModActive("Bossbar") && (PogoForce.State > 0) && (!SevenForce.FlashOpacity)
+    {
+        DrawBossHealthBar(0xe3, boss.remaining_hits, 8)
+    }
+}
+
+//#address-hook(0x210224)
+function void PogoSpike.BaseUpdate()
+{
+    if (SevenForce.Phase != 0)
+    {
+        UnloadObject()
+        return
+    }
+	
+	A1 = 0xffff0000 + u16[A0 + 0x46]
+	if (objA1.state == 0)
+		Enemy.DrawDynamicObject()
+	else
+		DrawObject()
+    MoveWithParent()
+}
+
+function void PogoForce.HealthUpdater()
+{
+    if (objA0.collision_attributes != 0)
+        return
+
+    if (boss.remaining_hits == 0) && (!SevenForce.FlashOpacity)
+    {
+        requestLoadingPatterns(0x5f)
+
+        SevenForce.Transform()
+
+        RollerForce.Intitalize()
+        UnloadObject()
+        return
+    }
+
+    if (objA0.state == 0) && (!SevenForce.FlashOpacity)
+    {
+        objA0.state = 0x20
+        playSound(0x6e)
+        objA0.flags2a |= 0x40
+        SevenForce.HitFlashTimer = 0x20
+    }
+
+    // code for hit flashing and other stuff here
+
+    --objA0.state
+    if (objA0.state == 0)
+    {
+        objA0.flags2a &= ~0x40
+        u8[A0 + 0x28] = u8[A0 + 0x25]
+    }
+}
+
+function void PogoForce.StateMachine()
+{
+    UpdateMovementStraightSimple()
+
+    if objA0.velocity.y >= 0
+    {
+        if PogoForce.BodyOffset != 12
+            PogoForce.BodyOffset++
+    }
+    else
+    {
+        if PogoForce.BodyOffset != -32
+            PogoForce.BodyOffset--
+    }
+
+    if PogoForce.StateTimer
+        PogoForce.StateTimer--
+
+    if PogoForce.State == 0
+    {
+        boss.remaining_hits = 8
+        playMusic(MUSIC_CTRL_FADEOUT)
+
+        if PogoForce.StateTimer == 1
+        {
+            PogoForce.State = 1
+            PogoSpike.Intitalize()
+            playMusic(MUSIC_MAINBOSS)
+        }
+
+        if PogoForce.StateTimer == 240
+        {
+            if !(Mods.isModActive("SAWNIC & SLUDGLES") || Mods.isModActive("Sawnic"))
+                Audio.playAudio("gsh_warning", AudioContext.CONTEXT_SOUND)   
+            SevenForce.WarningTimer = 250
+        }
+    }
+    if PogoForce.State == 1
+    {
+        MoveWithGravity20()
+        objA0.velocity.y -= 0x0f
+
+        if objA0.position.y.u16 >= 0x0330
+        {
+            objA0.position.y.u16 = 0x0330
+
+            camera.hyper_knux_shake = 0x0114
+            playSound(0x9e)
+            Audio.playAudio("gsh_impact", AudioContext.CONTEXT_SOUND)
+            SevenForce.StudioTriggerMoment()
+
+            GetRandomNumber()
+            D0.u16 &= 0x100
+
+            objA0.velocity.x = SevenForce.Direction ? 0x100 : -0x100
+
+            objA0.velocity.y = -0x380 + D0.u16
+
+            //spawnChildObject(0x01e626, 0x00, 0, 0x60)
+
+            spawnChildObject(0x210226, 0x00, 0, 0x48) // Shockwave (Left)
+            objA1.mapping_offset = 0x01a99a
+            objA1.sprite_attributes = (sprite_attribute.PRIORITY | 0x06bc)
+            objA1.render_flags = render_flag.WORLD
+            objA1.sprite_priority = 0x100
+            objA1.hitbox_extends.x = 12
+            objA1.hitbox_extends.y = 12
+            objA1.collision_attributes = (collision.size.8x8 | collision.flag.THREAT)
+            objA1.velocity.x = -0x800
+            objA1.velocity.y = 0
+            objA1.state = 0
+            objA1.subtype2c = 0x00
+            objA1.box_size.x = 8
+            objA1.box_size.y = 8
+
+            spawnChildObject(0x210226, 0x00, 0, 0x48) // Shockwave (Right)
+            objA1.mapping_offset = 0x01a99a
+            objA1.sprite_attributes = (sprite_attribute.PRIORITY | 0x06bc)
+            objA1.render_flags = render_flag.WORLD
+            objA1.sprite_priority = 0x100
+            objA1.hitbox_extends.x = 12
+            objA1.hitbox_extends.y = 12
+            objA1.collision_attributes = (collision.size.8x8 | collision.flag.THREAT)
+            objA1.velocity.x = 0x800
+            objA1.velocity.y = 0
+            objA1.state = 0
+            objA1.subtype2c = 0x02
+            objA1.box_size.x = 8
+            objA1.box_size.y = 8
+        }
+    }
+}
+
+//# address-hook(0x210226)
+function void PogoShockwave.Update()
+{
+    objA0.state += 1
+    SevenForce.ProjectileUnloader()
+
+    Enemy.DrawDynamicObject()
+    UpdateMovementStraightSimple()
+
+    if (objA0.state > 12)
+    {
+        UnloadObject()
+        return
+    }
+}

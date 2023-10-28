@@ -1,0 +1,726 @@
+// Spider Force (7th phase, spider)
+
+global u8 SpiderForce.State
+global u16 SpiderForce.StateTimer
+
+global u64 SpiderForce.ArmRotation
+global u64 SpiderForce.LegRotation
+global u64 SpiderForce.Scale
+
+global bool SpiderForce.LegRotationDirection
+
+/* PF States
+0 = waiting to drop
+1 = dropping
+*/
+
+// Renderer
+function bool Standalone.onWriteToSpriteTable(s16 px, s16 py, u16 renderQueue)
+{
+    // Body
+    if (objA0.update_address == 0x210244)
+    {
+        Renderer.drawCustomSprite("SpiderForce_Body", px, py - 28, 0, SPRITE_FLAG_PRIO | render_flag.WORLD, renderQueue - 1005, 0, 0xfffffffffff, SpiderForce.Scale)
+
+        Renderer.drawCustomSprite("SpiderForce_Leg", px + 12, py - 24, 0, SPRITE_FLAG_PRIO | render_flag.WORLD, renderQueue - 1006, SpiderForce.LegRotation * 2, 0xfffffffffff, SpiderForce.Scale)
+        Renderer.drawCustomSprite("SpiderForce_Leg", px + 12, py, 0, SPRITE_FLAG_PRIO | render_flag.WORLD, renderQueue - 1006, -SpiderForce.LegRotation, 0xfffffffffff, SpiderForce.Scale)
+        Renderer.drawCustomSprite("SpiderForce_Leg", px + 12, py + 24, 0, SPRITE_FLAG_PRIO | render_flag.WORLD, renderQueue - 1006, SpiderForce.LegRotation * 2, 0xfffffffffff, SpiderForce.Scale)
+
+        Renderer.drawCustomSprite("SpiderForce_Leg", px - 12, py - 24, 0, SPRITE_FLAG_PRIO | render_flag.WORLD | SPRITE_FLAG_FLIP_X, renderQueue - 1006, -SpiderForce.LegRotation * 2, 0xfffffffffff, SpiderForce.Scale)
+        Renderer.drawCustomSprite("SpiderForce_Leg", px - 12, py, 0, SPRITE_FLAG_PRIO | render_flag.WORLD | SPRITE_FLAG_FLIP_X, renderQueue - 1006, SpiderForce.LegRotation, 0xfffffffffff, SpiderForce.Scale)
+        Renderer.drawCustomSprite("SpiderForce_Leg", px - 12, py + 24, 0, SPRITE_FLAG_PRIO | render_flag.WORLD | SPRITE_FLAG_FLIP_X, renderQueue - 1006, -SpiderForce.LegRotation * 2, 0xfffffffffff, SpiderForce.Scale)
+
+        Renderer.drawCustomSprite("SpiderForce_Hand", px + 16, py + 18, 0, SPRITE_FLAG_PRIO | render_flag.WORLD, renderQueue - 1004, SpiderForce.ArmRotation, 0xfffffffffff, SpiderForce.Scale)
+        Renderer.drawCustomSprite("SpiderForce_Hand", px - 16, py + 18, 0, SPRITE_FLAG_PRIO | render_flag.WORLD | SPRITE_FLAG_FLIP_X, renderQueue - 1004, -SpiderForce.ArmRotation, 0xfffffffffff, SpiderForce.Scale)
+
+        if (SevenForce.HitFlashTimer)
+        {
+            if (level.framecounter.low & 0x01)
+            {
+                Renderer.drawCustomSprite("SevenForce_MainBody_Hit", px, py, 0, render_flag.WORLD | SPRITE_FLAG_PRIO, renderQueue - 1003, 0, 255)
+                Renderer.drawCustomSprite("SevenForce_MainEye", px + SevenForce.EyeOffset, py, 0, render_flag.WORLD | SPRITE_FLAG_PRIO, renderQueue - 1002, 0, 255)
+            }
+            else
+            {
+                Renderer.drawCustomSprite("SevenForce_MainBody", px, py, 0, render_flag.WORLD | SPRITE_FLAG_PRIO, renderQueue - 1003, 0, 255)
+                Renderer.drawCustomSprite("SevenForce_MainEye_Hit", px + SevenForce.EyeOffset, py, 0, render_flag.WORLD | SPRITE_FLAG_PRIO, renderQueue - 1002, 0, 255)
+            }
+
+            Renderer.drawCustomSprite("SevenForce_MainIris", px + SevenForce.EyeOffset * 2, py, 0, render_flag.WORLD | SPRITE_FLAG_PRIO, renderQueue - 1001, 0, 255)
+            Renderer.drawCustomSprite("SevenForce_MainIrisShine", px + SevenForce.EyeOffset, py, 0, render_flag.WORLD | SPRITE_FLAG_PRIO, renderQueue - 1000, 0, 255)
+        }
+        else
+        {
+            Renderer.drawCustomSprite("SevenForce_MainBody", px, py, 0, render_flag.WORLD | SPRITE_FLAG_PRIO, renderQueue - 1003, 0, 255)
+            Renderer.drawCustomSprite("SevenForce_MainEye", px + SevenForce.EyeOffset, py, 0, render_flag.WORLD | SPRITE_FLAG_PRIO, renderQueue - 1002, 0, 255)
+
+            Renderer.drawCustomSprite("SevenForce_MainIris", px + SevenForce.EyeOffset * 2, py, 0, render_flag.WORLD | SPRITE_FLAG_PRIO, renderQueue - 1001, 0, 255)
+            Renderer.drawCustomSprite("SevenForce_MainIrisShine", px + SevenForce.EyeOffset, py, 0, render_flag.WORLD | SPRITE_FLAG_PRIO, renderQueue - 1000, 0, 255)
+        }
+        return true
+    }
+
+    // Bullet
+    if (objA0.update_address == 0x210246)
+    {
+        if objA0.subtype2c == 0x08 // burst
+        {
+            if !(level.framecounter.low & 0x01)
+                Renderer.drawCustomSprite("SpiderForce_Burst_0", px, py, 0, SPRITE_FLAG_PRIO | render_flag.WORLD, renderQueue - 1111, 0, 255)
+            else
+                Renderer.drawCustomSprite("SpiderForce_Burst_1", px, py, 0, SPRITE_FLAG_PRIO | render_flag.WORLD, renderQueue - 1111, 0, 255)
+        }
+        else if objA0.subtype2c == 0x02 // bullet
+        {
+            if !(level.framecounter.low & 0x01)
+                Renderer.drawCustomSprite("StormForce_Bullet_0", px, py, 0, SPRITE_FLAG_PRIO | render_flag.WORLD, renderQueue - 960, 0, 255)
+            else
+                Renderer.drawCustomSprite("StormForce_Bullet_1", px, py, 0, SPRITE_FLAG_PRIO | render_flag.WORLD, renderQueue - 960, 0, 255)
+        }
+        else
+        {
+            if !(level.framecounter.low & 0x01)
+                Renderer.drawCustomSprite("SpiderForce_Bullet_0", px, py, 0, SPRITE_FLAG_PRIO | render_flag.WORLD, renderQueue - 950, 0, 255)
+            else
+                Renderer.drawCustomSprite("SpiderForce_Bullet_1", px, py, 0, SPRITE_FLAG_PRIO | render_flag.WORLD, renderQueue - 950, 0, 255)
+        }
+        return true
+    }
+
+    // Defeated
+    if (objA0.update_address == 0x210248)
+    {
+        if (level.framecounter.low & 0x01)
+        {
+            Renderer.drawCustomSprite("SevenForce_MainBody_Hit", px, py, 0, render_flag.WORLD | SPRITE_FLAG_PRIO, renderQueue - 1003, 0, 255)
+            Renderer.drawCustomSprite("SevenForce_MainEye", px + SevenForce.EyeOffset, py, 0, render_flag.WORLD | SPRITE_FLAG_PRIO, renderQueue - 1002, 0, 255)
+        }
+        else
+        {
+            Renderer.drawCustomSprite("SevenForce_MainBody", px, py, 0, render_flag.WORLD | SPRITE_FLAG_PRIO, renderQueue - 1003, 0, 255)
+            Renderer.drawCustomSprite("SevenForce_MainEye_Hit", px + SevenForce.EyeOffset, py, 0, render_flag.WORLD | SPRITE_FLAG_PRIO, renderQueue - 1002, 0, 255)
+        }
+
+        Renderer.drawCustomSprite("SevenForce_MainIris", px + SevenForce.EyeOffset * 2, py, 0, render_flag.WORLD | SPRITE_FLAG_PRIO, renderQueue - 1001, 0, 255)
+        Renderer.drawCustomSprite("SevenForce_MainIrisShine", px + SevenForce.EyeOffset, py, 0, render_flag.WORLD | SPRITE_FLAG_PRIO, renderQueue - 1000, 0, 255)
+
+        return true
+    }
+
+    return base.Standalone.onWriteToSpriteTable(px, py, renderQueue)
+}
+
+function void SpiderForce.Intitalize()
+{   
+    if (allocDynamicObjectStd())
+    {
+        boss.remaining_hits = 8
+		SpiderForce.State = 0
+        SpiderForce.StateTimer = 30
+        SpiderForce.LegRotation = 5
+        SpiderForce.LegRotationDirection = 0
+        SpiderForce.ArmRotation = 0
+        SpiderForce.Scale = 0
+        objA1.update_address = 0x210244 // Spider force
+ 		objA1.mapping_offset = 0x01a99a
+		objA1.sprite_attributes = (sprite_attribute.PRIORITY | 0x06bc)
+		objA1.render_flags = render_flag.WORLD
+		objA1.sprite_priority = 0x100
+		objA1.hitbox_extends.x = 32
+		objA1.hitbox_extends.y = 32
+        objA1.position.y.u16 = objA0.position.y.u16
+        objA1.position.x.u16 = objA0.position.x.u16
+        objA1.box_size.x = 999
+        objA1.box_size.y = 999
+
+        objA1.collision_attributes = collision.size.32x32
+
+        playSound(0x7a)
+
+        SevenForce.HitFlashTimer = 0
+        SevenForce.Phase = 6
+
+        A1 = 0xffff0000 + u16[0xfffffaae]
+        if (objA1.update_address == 0x08b660)
+        {
+            u8[A1 + 0x38] |= 0x20
+        }
+    }
+}
+
+//#address-hook(0x210244)
+function void SpiderForce.BaseUpdate()
+{
+    SpiderForce.HealthUpdater()
+    SpiderForce.StateMachine()
+    SevenForce.DirectionCheck()
+    SevenForce.StayInBoundary()
+    SevenForce.UpdateHitFlashing()
+
+    Enemy.DrawDynamicObject()
+
+    if SpiderForce.Scale < 0xffff
+        SpiderForce.Scale += 0x200
+    else
+        SpiderForce.Scale = 0xffff
+
+    objA0.velocity.x += SevenForce.Direction ? 0x16 : -0x16
+
+    if objA0.velocity.x > 0x400
+        objA0.velocity.x = 0x400
+    if objA0.velocity.x < -0x400
+        objA0.velocity.x = -0x400
+
+    if objA0.position.y.u16 < 0x2f0
+        objA0.velocity.y += 0x08
+    if objA0.position.y.u16 > 0x2f0
+        objA0.velocity.y -= 0x08
+
+    if objA0.velocity.y > 0x200
+        objA0.velocity.y = 0x200
+    if objA0.velocity.y < -0x200
+        objA0.velocity.y = -0x200
+
+    if SpiderForce.LegRotationDirection == 0
+    {
+        SpiderForce.LegRotation--
+
+        if SpiderForce.LegRotation == -6
+        {
+            SpiderForce.LegRotationDirection = 1
+        }
+    }
+    else
+    {
+        SpiderForce.LegRotation++
+
+        if SpiderForce.LegRotation == 6
+        {
+            SpiderForce.LegRotationDirection = 0
+        }
+    }
+
+    if Mods.isModActive("Bossbar") && (!SevenForce.FlashOpacity)
+    {
+        DrawBossHealthBar(0xe9, boss.remaining_hits, 8)
+    }
+}
+
+function void SpiderForce.HealthUpdater()
+{
+    if (objA0.collision_attributes != 0)
+        return
+
+    if (boss.remaining_hits == 0) && (!SevenForce.FlashOpacity)
+    {
+        spawnChildObject(0x210248, 0x00, 0, 0) // Defeated
+        objA1.mapping_offset = 0x01a99a
+        objA1.sprite_attributes = (sprite_attribute.PRIORITY | 0x06bc)
+        objA1.render_flags = render_flag.WORLD
+        objA1.sprite_priority = 0x100
+        objA1.state = 0
+        objA1.velocity.x = -0x300
+        objA1.velocity.y = -0x300
+        objA1.subtype2c = 0
+        objA1.box_size.x = 999
+        objA1.box_size.y = 999
+
+        AddScoreForBossEnemy()
+
+        SevenForce.HitFlashTimer = 0
+
+		playSound(0x4e)
+        playMusic(MUSIC_CTRL_FADEOUT)
+        SevenForce.FinalFlashOpacity = 255
+
+        spawnSimpleChildObjects(0x083d84, 1)
+
+        UnloadObject()
+        return
+    }
+
+    if (objA0.state == 0) && (!SevenForce.FlashOpacity)
+    {
+        objA0.state = 0x20
+        playSound(0x6e)
+        objA0.flags2a |= 0x40
+        SevenForce.HitFlashTimer = 0x20
+    }
+
+    // code for hit flashing and other stuff here
+
+    --objA0.state
+    if (objA0.state == 0)
+    {
+        objA0.flags2a &= ~0x40
+        u8[A0 + 0x28] = u8[A0 + 0x25]
+    }
+}
+
+function void SpiderForce.StateMachine()
+{
+    UpdateMovementStraightSimple()
+    SevenForce.StudioTriggerMoment()
+
+    if SpiderForce.StateTimer
+        SpiderForce.StateTimer--
+
+    if SpiderForce.State == 0 // Init
+    {
+        boss.remaining_hits = 8
+        SpiderForce.LegRotation = 0
+        SpiderForce.State = 1
+        objA0.velocity.y = -0x200
+        SpiderForce.StateTimer = 500
+        SpiderForce.ArmRotation = 0
+    }
+    if SpiderForce.State == 1 // Claw attack
+    {
+        if SpiderForce.StateTimer == 1
+        {
+            SpiderForce.State = 2
+            SpiderForce.StateTimer = 160
+            SpiderForce.ArmRotation = 0
+        }
+
+        if SpiderForce.StateTimer < 240 && SpiderForce.StateTimer > 180
+        {
+            SpiderForce.ArmRotation--
+        }
+        if SpiderForce.StateTimer < 180 && SpiderForce.StateTimer > 170
+        {
+            SpiderForce.ArmRotation += 9
+        }
+        if SpiderForce.StateTimer == 175
+        {
+            SpiderForce.Bullet.CreateCross()
+            SpiderForce.Bullet.CreatePlus()
+
+            camera.hyper_knux_shake = 0x0114
+            Audio.playAudio("gsh_move", AudioContext.CONTEXT_SOUND)
+
+            spawnChildObject(0x210246, 0x00, 0, 0x08) // Bullet (Down)
+            objA1.mapping_offset = 0x01a99a
+            objA1.sprite_attributes = (sprite_attribute.PRIORITY | 0x06bc)
+            objA1.render_flags = render_flag.WORLD
+            objA1.sprite_priority = 0x100
+            objA1.hitbox_extends.x = 24
+            objA1.hitbox_extends.y = 24
+            objA1.collision_attributes = (collision.size.24x24 | collision.flag.THREAT)
+            objA1.state = 0
+            objA1.velocity.x = 0
+            objA1.velocity.y = 0xc00
+            objA1.subtype2c = 0x08 // Burst
+            objA1.box_size.x = 24
+            objA1.box_size.y = 48
+        }
+        if SpiderForce.StateTimer < 170 && SpiderForce.ArmRotation != 0
+        {
+            SpiderForce.ArmRotation--
+        }
+    }
+    if SpiderForce.State == 2 // Newtrogic moment
+    {
+        if SpiderForce.StateTimer == 1
+        {
+            SpiderForce.State = 1
+            SpiderForce.StateTimer = 300
+            SpiderForce.ArmRotation = 0
+        }
+
+        if SpiderForce.StateTimer == 90
+        {
+            Audio.playAudio("gsh_move", AudioContext.CONTEXT_SOUND)
+            camera.hyper_knux_shake = 0x14
+        }
+
+        if SpiderForce.StateTimer == 50
+        {
+            SpiderForce.Bullet.CreatePlus()
+
+            Audio.playAudio("gsh_roll", AudioContext.CONTEXT_SOUND)
+
+            spawnChildObject(0x210246, 0x00, 0, 0) // Bullet (Up Left)
+            objA1.mapping_offset = 0x01a99a
+            objA1.sprite_attributes = (sprite_attribute.PRIORITY | 0x06bc)
+            objA1.render_flags = render_flag.WORLD
+            objA1.sprite_priority = 0x100
+            objA1.hitbox_extends.x = 8
+            objA1.hitbox_extends.y = 8
+            objA1.collision_attributes = (collision.size.8x8 | collision.flag.THREAT)
+            objA1.state = 0
+            objA1.velocity.x = -0x300
+            objA1.velocity.y = -0x300
+            objA1.subtype2c = 0x04
+            objA1.box_size.x = 8
+            objA1.box_size.y = 8
+
+            spawnChildObject(0x210246, 0x00, 0, 0) // Bullet (Up Right)
+            objA1.mapping_offset = 0x01a99a
+            objA1.sprite_attributes = (sprite_attribute.PRIORITY | 0x06bc)
+            objA1.render_flags = render_flag.WORLD
+            objA1.sprite_priority = 0x100
+            objA1.hitbox_extends.x = 8
+            objA1.hitbox_extends.y = 8
+            objA1.collision_attributes = (collision.size.8x8 | collision.flag.THREAT)
+            objA1.state = 0
+            objA1.velocity.x = 0x300
+            objA1.velocity.y = -0x300
+            objA1.subtype2c = 0x06
+            objA1.box_size.x = 8
+            objA1.box_size.y = 8
+        }
+    }
+}
+
+//#address-hook(0x210246)
+function void SpiderForce.Bullet.BaseUpdate()
+{
+    if objA0.subtype2c == 0x08
+    {
+        objA0.state += 1
+        SevenForce.ProjectileUnloader()
+
+        Enemy.DrawDynamicObject()
+        UpdateMovementStraightSimple()
+
+       if (objA0.state > 250)
+        {
+            UnloadObject()
+            return
+        }
+
+        if (objA0.position.y.u16 > 0x03b0)
+        {
+            playSound(0x4d)
+            playSound(0x7a)
+
+            Audio.playAudio("gsh_explosion1", AudioContext.CONTEXT_SOUND)
+            Audio.playAudio("gsh_transform", AudioContext.CONTEXT_SOUND)
+
+            camera.hyper_knux_shake = 0x0114
+
+            spawnChildObject(0x21023E, 0x00, 0, 0) // Bullet (Up)
+            objA1.mapping_offset = 0x01a99a
+            objA1.sprite_attributes = (sprite_attribute.PRIORITY | 0x06bc)
+            objA1.render_flags = render_flag.WORLD
+            objA1.sprite_priority = 0x100
+            objA1.hitbox_extends.x = 8
+            objA1.hitbox_extends.y = 8
+            objA1.collision_attributes = (collision.size.8x8 | collision.flag.THREAT)
+            objA1.state = 0
+            objA1.velocity.x = 0
+            objA1.velocity.y = -0x300
+            objA1.subtype2c = 0x02
+            objA1.box_size.x = 8
+            objA1.box_size.y = 8
+
+            spawnChildObject(0x21023E, 0x00, 0, 0) // Bullet (Up Left)
+            objA1.mapping_offset = 0x01a99a
+            objA1.sprite_attributes = (sprite_attribute.PRIORITY | 0x06bc)
+            objA1.render_flags = render_flag.WORLD
+            objA1.sprite_priority = 0x100
+            objA1.hitbox_extends.x = 8
+            objA1.hitbox_extends.y = 8
+            objA1.collision_attributes = (collision.size.8x8 | collision.flag.THREAT)
+            objA1.state = 0
+            objA1.velocity.x = -0x300
+            objA1.velocity.y = -0x300
+            objA1.subtype2c = 0x02
+            objA1.box_size.x = 8
+            objA1.box_size.y = 8
+
+            spawnChildObject(0x21023E, 0x00, 0, 0) // Bullet (Up Right)
+            objA1.mapping_offset = 0x01a99a
+            objA1.sprite_attributes = (sprite_attribute.PRIORITY | 0x06bc)
+            objA1.render_flags = render_flag.WORLD
+            objA1.sprite_priority = 0x100
+            objA1.hitbox_extends.x = 8
+            objA1.hitbox_extends.y = 8
+            objA1.collision_attributes = (collision.size.8x8 | collision.flag.THREAT)
+            objA1.state = 0
+            objA1.velocity.x = 0x300
+            objA1.velocity.y = -0x300
+            objA1.subtype2c = 0x02
+            objA1.box_size.x = 8
+            objA1.box_size.y = 8
+
+            UnloadObject()
+            return
+        }
+    }
+    else if objA0.subtype2c == 0x02
+    {
+        objA0.state += 1
+        SevenForce.ProjectileUnloader()
+
+        Enemy.DrawDynamicObject()
+        UpdateMovementStraightSimple()
+
+        if (objA0.state > 0x4f)
+        {
+            MoveWithGravity20()
+        }
+
+        if objA0.state == 0x4f
+            playSound(0x67)
+
+        if (objA0.state > 250)
+        {
+            UnloadObject()
+            return
+        }
+    }
+    else
+    {
+        objA0.state += 1
+
+        if objA0.state == 29
+            objA0.velocity.x = 0
+
+        if (objA0.state > 30)
+        {
+            objA0.velocity.y = 0
+
+            if objA0.subtype2c == 0x04
+                objA0.velocity.x += 0x16 
+            else if objA0.subtype2c == 0x06
+                objA0.velocity.x -= 0x16 
+
+            if ((level.framecounter.low & 0x0f) == 0)
+            {
+                Audio.playAudio("gsh_grind", AudioContext.CONTEXT_SOUND)
+
+                spawnChildObject(0x210246, 0x00, 0, 0) // Falling bullet
+                objA1.mapping_offset = 0x01a99a
+                objA1.sprite_attributes = (sprite_attribute.PRIORITY | 0x06bc)
+                objA1.render_flags = render_flag.WORLD
+                objA1.sprite_priority = 0x100
+                objA1.hitbox_extends.x = 8
+                objA1.hitbox_extends.y = 8
+                objA1.collision_attributes = (collision.size.4x4 | collision.flag.THREAT)
+                objA1.velocity.x = 0
+                objA1.velocity.y = 0
+                objA1.subtype2c = 0x02
+                objA1.box_size.x = 8
+                objA1.box_size.y = 8
+
+                GetRandomNumber()
+                D0.u16 &= 0x3c
+
+                objA1.state = D0.u16
+            }
+        }
+
+        if (UML.TransitionCode == 3)
+        {
+            if objA0.position.y.u16 < 0x02f0
+                objA0.position.y.u16 = 0x02f0
+        }
+        else
+        {
+            if objA0.position.y.u16 < 0x02e0
+                objA0.position.y.u16 = 0x02e0
+        }
+
+        SevenForce.ProjectileUnloader()
+
+        Enemy.DrawDynamicObject()
+        UpdateMovementStraightSimple()
+
+        if (objA0.state > 100)
+        {
+            UnloadObject()
+            return
+        }
+    }
+}
+
+function void SpiderForce.Bullet.CreateCross()
+{
+    playSound(0x4d)
+    playSound(0x7a)
+
+    spawnChildObject(0x21023E, 0x00, 0, -0x08) // Bullet (Up Left)
+    objA1.mapping_offset = 0x01a99a
+    objA1.sprite_attributes = (sprite_attribute.PRIORITY | 0x06bc)
+    objA1.render_flags = render_flag.WORLD
+    objA1.sprite_priority = 0x100
+    objA1.hitbox_extends.x = 8
+    objA1.hitbox_extends.y = 8
+    objA1.collision_attributes = (collision.size.8x8 | collision.flag.THREAT)
+    objA1.state = 0
+    objA1.velocity.x = -0x300
+    objA1.velocity.y = -0x300
+    objA1.subtype2c = 0x02
+    objA1.box_size.x = 8
+    objA1.box_size.y = 8
+
+    spawnChildObject(0x21023E, 0x00, 0, -0x08) // Bullet (Up Right)
+    objA1.mapping_offset = 0x01a99a
+    objA1.sprite_attributes = (sprite_attribute.PRIORITY | 0x06bc)
+    objA1.render_flags = render_flag.WORLD
+    objA1.sprite_priority = 0x100
+    objA1.hitbox_extends.x = 8
+    objA1.hitbox_extends.y = 8
+    objA1.collision_attributes = (collision.size.8x8 | collision.flag.THREAT)
+    objA1.state = 0
+    objA1.velocity.x = 0x300
+    objA1.velocity.y = -0x300
+    objA1.subtype2c = 0x02
+    objA1.box_size.x = 8
+    objA1.box_size.y = 8
+
+    spawnChildObject(0x21023E, 0x00, 0, -0x08) // Bullet (Down Left)
+    objA1.mapping_offset = 0x01a99a
+    objA1.sprite_attributes = (sprite_attribute.PRIORITY | 0x06bc)
+    objA1.render_flags = render_flag.WORLD
+    objA1.sprite_priority = 0x100
+    objA1.hitbox_extends.x = 8
+    objA1.hitbox_extends.y = 8
+    objA1.collision_attributes = (collision.size.8x8 | collision.flag.THREAT)
+    objA1.state = 0
+    objA1.velocity.x = -0x300
+    objA1.velocity.y = 0x300
+    objA1.subtype2c = 0x02
+    objA1.box_size.x = 8
+    objA1.box_size.y = 8
+
+    spawnChildObject(0x21023E, 0x00, 0, -0x08) // Bullet (Down Right)
+    objA1.mapping_offset = 0x01a99a
+    objA1.sprite_attributes = (sprite_attribute.PRIORITY | 0x06bc)
+    objA1.render_flags = render_flag.WORLD
+    objA1.sprite_priority = 0x100
+    objA1.hitbox_extends.x = 8
+    objA1.hitbox_extends.y = 8
+    objA1.collision_attributes = (collision.size.8x8 | collision.flag.THREAT)
+    objA1.state = 0
+    objA1.velocity.x = 0x300
+    objA1.velocity.y = 0x300
+    objA1.subtype2c = 0x02
+    objA1.box_size.x = 8
+    objA1.box_size.y = 8
+}
+
+function void SpiderForce.Bullet.CreatePlus()
+{
+    playSound(0x4d)
+    playSound(0x7a)
+
+    spawnChildObject(0x21023E, 0x00, 0, -0x08) // Bullet (Left)
+    objA1.mapping_offset = 0x01a99a
+    objA1.sprite_attributes = (sprite_attribute.PRIORITY | 0x06bc)
+    objA1.render_flags = render_flag.WORLD
+    objA1.sprite_priority = 0x100
+    objA1.hitbox_extends.x = 8
+    objA1.hitbox_extends.y = 8
+    objA1.collision_attributes = (collision.size.8x8 | collision.flag.THREAT)
+    objA1.state = 0
+    objA1.velocity.x = -0x300
+    objA1.velocity.y = 0
+    objA1.subtype2c = 0x02
+    objA1.box_size.x = 8
+    objA1.box_size.y = 8
+
+    spawnChildObject(0x21023E, 0x00, 0, -0x08) // Bullet (Up)
+    objA1.mapping_offset = 0x01a99a
+    objA1.sprite_attributes = (sprite_attribute.PRIORITY | 0x06bc)
+    objA1.render_flags = render_flag.WORLD
+    objA1.sprite_priority = 0x100
+    objA1.hitbox_extends.x = 8
+    objA1.hitbox_extends.y = 8
+    objA1.collision_attributes = (collision.size.8x8 | collision.flag.THREAT)
+    objA1.state = 0
+    objA1.velocity.x = 0
+    objA1.velocity.y = -0x300
+    objA1.subtype2c = 0x02
+    objA1.box_size.x = 8
+    objA1.box_size.y = 8
+
+    spawnChildObject(0x21023E, 0x00, 0, -0x08) // Bullet (Right)
+    objA1.mapping_offset = 0x01a99a
+    objA1.sprite_attributes = (sprite_attribute.PRIORITY | 0x06bc)
+    objA1.render_flags = render_flag.WORLD
+    objA1.sprite_priority = 0x100
+    objA1.hitbox_extends.x = 8
+    objA1.hitbox_extends.y = 8
+    objA1.collision_attributes = (collision.size.8x8 | collision.flag.THREAT)
+    objA1.state = 0
+    objA1.velocity.x = 0x300
+    objA1.velocity.y = 0
+    objA1.subtype2c = 0x02
+    objA1.box_size.x = 8
+    objA1.box_size.y = 8
+
+    spawnChildObject(0x21023E, 0x00, 0, -0x08) // Bullet (Down)
+    objA1.mapping_offset = 0x01a99a
+    objA1.sprite_attributes = (sprite_attribute.PRIORITY | 0x06bc)
+    objA1.render_flags = render_flag.WORLD
+    objA1.sprite_priority = 0x100
+    objA1.hitbox_extends.x = 8
+    objA1.hitbox_extends.y = 8
+    objA1.collision_attributes = (collision.size.8x8 | collision.flag.THREAT)
+    objA1.state = 0
+    objA1.velocity.x = 0
+    objA1.velocity.y = 0x300
+    objA1.subtype2c = 0x02
+    objA1.box_size.x = 8
+    objA1.box_size.y = 8
+}
+
+//#address-hook(0x210248)
+function void SevenForce.Defeated.BaseUpdate()
+{
+    objA0.state += 1
+
+    Enemy.DrawDynamicObject()
+
+    if ((level.framecounter.low & 0x0f) == 0)
+    {
+        spawnSimpleChildObjects(0x083d84, 1)
+        Audio.playAudio("gsh_explosion2", AudioContext.CONTEXT_SOUND)
+        camera.hyper_knux_shake = 0x14
+    }
+
+    if (objA0.state > 180)
+        MoveWithGravity20()
+
+    if (objA0.state == 180)
+    {
+        Audio.playAudio("gsh_explosion1", AudioContext.CONTEXT_SOUND)
+        Audio.playAudio("gsh_explosion2", AudioContext.CONTEXT_SOUND)
+        Audio.playAudio("gsh_explosion3", AudioContext.CONTEXT_SOUND)
+        playSound(0x4e)
+    }
+
+    if (objA0.state > 254)
+    {
+        level.boss_encounter = 0
+
+        if (UML_IsSawnicOrSludgles())
+        {
+            TriggerNextZone(0x0600)
+        }
+
+        if (allocDynamicObjectStd())
+        {
+            // Create the object that fades out the boss theme and starts the level music afterwards
+            objA1.update_address = 0x085ba8
+        }
+
+        Audio.playAudio("gsh_explosion1", AudioContext.CONTEXT_SOUND)
+        playSound(0x4e)
+        SevenForce.FinalFlashOpacity = 255
+        SevenForce.Defeated = true
+
+        A1 = 0xffffb000
+        char.position.x.u16 = 0x44a4
+        char.position.y.u16 = 0x06a8
+        camera.position.x.u16 = 0x4368
+        camera.position.y.u16 = 0x05f8
+		move_area.bottom.target = 0x0388
+
+        UnloadObject()
+        return
+    }
+}

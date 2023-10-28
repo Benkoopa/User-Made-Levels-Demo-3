@@ -1,0 +1,64 @@
+//Music changes
+//Include Globals for music options
+global u8 UML.FangTheme
+global u8 UML.CNZ1Theme
+global u8 UML.CNZ2Theme
+global u8 UML.SevenForceTheme
+
+// i literally had to overhaul this entire code to not override Standalone.playAudio
+// some of yall should never be allowed to code music changes ever again holy shit
+// why tf was it so long before IT WAS LIKE 6 MUSIC CHANGES
+// ~ Lemons
+
+// sorry i was very tired when i wrote this ^ ~ Lemons
+// Don't worry about it, i'll admit the code I used beforehand was completely stupid! ~ Syntax
+
+function u64 Standalone.getModdedSoundKey(u64 soundKey, u8 sfxId, u8 soundRegType)
+{
+	if (UML.Fun == 0x45 && soundRegType == SoundRegType.TYPE_MUSIC && sfxId != 0xdc) // Bazel Music
+		return "mazel"
+	else if (global.zone_act == 0x0201 && isFangEncounter == 1) && (sfxId == MUSIC_MINIBOSS || sfxId == MUSIC_MINIBOSS_2 || sfxId == MUSIC_MAINBOSS) // MGZ 2
+	{
+		if (UML_IsFabFang())
+			return "confrontingyourself"
+		else
+			return (UML.FangTheme) ? "fang_b" : "fang_f"
+	}
+	else if (sfxId == 0x08 && UML.CNZ2Theme == 1) // CNZ2
+		return "cnz_dark"
+	else if (global.zone_act == 0x0501 || global.zone_act == 0x0b00) // Seven Force
+	{
+		if (sfxId == MUSIC_MINIBOSS || sfxId == MUSIC_MINIBOSS_2 || sfxId == MUSIC_MAINBOSS)
+		{
+			if UML.SevenForceTheme == 0
+				return "7force"
+			else if UML.SevenForceTheme == 1
+				return "7force_gh"
+			else
+				return "7force_as"
+		}
+		else if (sfxId == MUSIC_LEVELCLEAR && global.zone_act == 0x0501)
+		{
+			return "stageclear_gh"	//The Alien Soldier Stage Clear music is basically non-existent so that's why it always uses the Gunstar Heroes track here ~ Syntax
+				//Also this doesn't play in Death Egg because no ~ Syntax
+		}
+	}
+	else if (sfxId == MUSIC_MINIBOSS || sfxId == MUSIC_MINIBOSS_2) && (global.zone_act == 0x0400) // extra life isnt in main branch yet but i dont wanna put this here later ~ lemons
+	{
+		if (ExtLife_useCYS())
+			return "confrontingyourself"
+		else
+			return "render_flag.FLIP_X"
+	}
+
+	return base.Standalone.getModdedSoundKey(soundKey, sfxId, soundRegType)
+}
+
+// do not move this audio function outside audio.lemon, pls ~ Lemons
+function bool ExtLife_useCYS()
+{
+	// rng go brrr 
+	if ((System.rand() % 5) != 0)
+		return false
+	return (isMainCharacter(CHARACTER_TAILS) && u8[0xffffe654] == 0 && Mods.isModActive("Extra Life") || Mods.isModActive("Extra Slot Extra Life") && u8[0xffffe654] == 20)
+}

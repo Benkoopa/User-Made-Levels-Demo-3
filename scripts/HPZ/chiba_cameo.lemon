@@ -1,0 +1,6 @@
+	//# address-hook(0x05aa34) end(0x05aa3c)
+	function void UpdateLevelTiles.EC()
+{
+	base.UpdateLevelTiles.EC()
+	Renderer.drawCustomSprite("chiba", 0x1508 - camera.position.x.u16, 0x034C - camera.position.y.u16 - camera.screenshake.offset, 0x00, render_flag.WORLD | SPRITE_FLAG_PRIO, 0x9500)
+}

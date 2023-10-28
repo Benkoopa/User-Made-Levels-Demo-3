@@ -1,0 +1,125 @@
+//-------------------------------------------------------//
+// Collision Chaos Bumpers                               //
+//-------------------------------------------------------//
+
+// Warning: i am not programmer, this is just a combination of balloon and bumper code
+
+//# address-hook(0x255000) end(0x25504A)
+function void fn255000()
+{
+	objA0.render_flags |= render_flag.WORLD
+	objA0.sprite_priority = 0x0280
+	objA0.box_size.x = 0x20
+#if STANDALONE
+	objA0.box_size.y = 0x30
+#else
+	objA0.box_size.y = 0x20
+#endif
+	objA0.collision_attributes = (collision.flag.SPECIAL | collision.size.8x8_2)
+	objA0.value32 = objA0.position.y.u16
+	objA0.state = (objA0.subtype2c * 2) & 0x0e
+
+	GetRandomNumber()
+	objA0.value26 = D0.u8
+
+	objA0.update_address = 0x255060
+	fn255060()
+}
+
+
+//# address-hook(0x255060) end(0x2550B4)
+function void fn255060()
+{
+	A1 = 0xffffb000
+	if (u8[A0 + 0x29] & 0x01)
+	{
+		u8[A0 + 0x29] &= ~0x01
+		fn2550BA()
+	}
+
+	A1 = 0xffffb04a
+	if (u8[A0 + 0x29] & 0x02)
+	{
+		u8[A0 + 0x29] &= ~0x02
+		fn2550BA()
+	}
+
+	Object.animationUpdate(0x03185e)
+
+	//if (u8[0x05] != 0)		// WTF?
+	//{
+	//	objA0.position.x.u16 = 0x7f00
+	//}
+
+	fn01b662()
+}
+
+// This is the function that happens when you pop a bubble
+//# address-hook(0x2550BA) end(0x255128)
+function void fn2550BA()
+{
+	objA0.state = 0x01
+	D1.u16 = objA0.position.x.u16 - objA1.position.x.u16
+	D2.u16 = objA0.position.y.u16 - objA1.position.y.u16
+	LookupAngleByVector()
+
+	D1.u16 = u8[0xfffffe04] & 0x03
+	D0.u16 += D1.u16
+	LookupSinCos()
+
+	D1.s32 = s32(D1.s16) * -0x600
+	D1.s32 >>= 8
+	objA1.velocity.x = D1.u16
+
+	if (objA0.subtype2c == 0x00)
+	{
+		D0.s32 = s32(D0.s16) * -0xa40
+		D0.s32 >>= 8
+		objA1.velocity.y = D0.u16
+		playSound(0xbf)
+	}
+	if (objA0.subtype2c == 0x0E)
+	{
+		UpdateMusicOnWaterTransition()
+		D0.s32 = s32(D0.s16) * -0x740
+		D0.s32 >>= 8
+		objA1.velocity.y = D0.u16
+		u8[A1 + 0x20] = char.state.BREATHE
+		playSound(0x38)
+	}
+
+	objA1.flags2a |= char.flag.IN_AIR
+	objA1.flags2a &= ~(char.flag.CONTROL_LOCK | char.flag.PUSHING)
+	u8[A1 + 0x40] = 0
+	
+
+#if STANDALONE
+	// Check for active dropdash
+	if (u8[A1 + 0x38] != CHARACTER_SONIC || u8[A1 + 0x20] != char.state.SONIC_DROPDASH)
+#endif
+	{
+		// Reset the "char.jumping" to make the character bounce off ignoring the velocity-y limit
+		u8[A1 + 0x40] = 0
+	}
+
+	objA0.state |= 0x01
+	if (s8[A0 + 0x2c] < 0)
+	{
+		objA1.velocity.y = -0x380
+		if (level.water_present != 0 && u8[A0 + 0x34] == 0)
+		{
+			A2 = 0x03185a
+			fn03181e()
+			fn03181e()
+			fn03181e()
+			fn03181e()
+			objA1.position.x.u16 = objA0.position.x.u16
+			objA1.position.y.u16 = objA0.position.y.u16
+		}
+	}
+
+	if (u8[A0 + 0x34] == 0)
+	{
+		u8[A0 + 0x34] = 0x01
+	}
+}

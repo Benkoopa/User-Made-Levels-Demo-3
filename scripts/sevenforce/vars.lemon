@@ -1,0 +1,14 @@
+global u8 SevenForce.Phase
+
+global bool SevenForce.Defeated
+
+global bool SevenForce.Direction
+global u16 SevenForce.EyeOffset
+
+global u8 SevenForce.HitFlashTimer
+
+global u8 SevenForce.FlashOpacity
+global u8 SevenForce.FinalFlashOpacity
+
+global u8 SevenForce.WarningTimer
+global u8 SevenForce.WarningFrame

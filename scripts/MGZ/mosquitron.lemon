@@ -1,0 +1,115 @@
+function void update.mosquitron()
+{
+	if level.wait_for_results
+		objA0.base_state = 0x06
+	
+	if objA0.base_state == 0x06
+	{
+		objA0.velocity.x = 0x00
+		objA0.velocity.y = -0x100
+	}	
+	
+	A1 = 0xffffb000
+	CheckDistanceToObjectA1()
+	
+	if D2.u16 < getScreenWidth() / 2 && D3.u16 < getScreenHeight() && objA0.base_state == 0x00
+		objA0.base_state = 0x02
+	
+	u16 distance = 0x58
+	
+	u16 target.angle = objA0.value3a
+	
+	s32 offset.x = (distance *  lookupCos(target.angle)) >> 7
+	s32 offset.y = (distance *   lookupSin(target.angle)) >> 8
+	if objA0.value3b
+		offset.x = -offset.x
+	
+	s64 distance.x = objA0.position.x.u16 - (camera.position.x.u16 + getScreenWidth() / 2) + offset.x
+	s64 distance.y = objA0.position.y.u16 - (camera.position.y.u16 + getScreenHeight() / 2) + offset.y + 0x04
+	
+	u32 angle = lookupAngleByVector(distance.x, distance.y)
+	objA0.value26 = angle
+	
+	if objA0.base_state == 0x02
+	{	
+		u32 velocity.gen = 0x600
+		
+		if sqrt((distance.x * distance.x) + (distance.y * distance.y)) > 0x08
+		{
+			objA0.velocity.x = -(velocity.gen *  lookupCos(angle)) >> 8
+			objA0.velocity.y = -(velocity.gen * lookupSin(angle)) >> 8
+		}
+		else
+		{
+			objA0.value32 = 0x30
+			objA0.base_state = 0x04
+		}
+		
+		if objA0.velocity.x > 0x60
+			objA0.render_flags |= render_flag.FLIP_X
+		if objA0.velocity.x < -0x60
+			objA0.render_flags &= ~render_flag.FLIP_X
+	}
+	
+	if objA0.base_state == 0x04
+	{	
+		u32 velocity.gen = 0x40
+		
+		if sqrt(distance.x * distance.x + distance.y * distance.y) < 0x20 || objA0.value32 <= 0x08
+			--objA0.value32
+		
+		if D0
+			objA0.render_flags |= render_flag.FLIP_X
+		else
+			objA0.render_flags &= ~render_flag.FLIP_X
+			
+		if sqrt(distance.x * distance.x + distance.y * distance.y) > 0x10
+			velocity.gen = 0x80
+		if sqrt(distance.x * distance.x + distance.y * distance.y) > 0x06
+		{
+			objA0.velocity.x = -(velocity.gen *  lookupCos(angle)) >> 8
+			objA0.velocity.y = -(velocity.gen * lookupSin(angle)) >> 7
+		}
+		else
+		{
+			objA0.velocity.x = 0
+			objA0.velocity.y = 0
+		}
+		
+		if objA0.value32 == 0x08
+			mosquitronSpawnProjectile(D0)
+		
+		if objA0.value32 == 0x00 || sqrt(distance.x * distance.x + distance.y * distance.y) > 0x40
+		{
+			objA0.value32 = 0x00
+			playSound(0x9a)
+			u16 rand = ((System.rand() % 55) - 64) * ((System.rand() % 55) - 64)
+			objA0.value3a = ((6 * rand) + 32768) / ((rand / 2) + 512)
+			
+			objA0.base_state = 0x02
+			if objA0.value3b == true
+				objA0.value3b = false
+			else
+				objA0.value3b = true
+		}
+	}
+	
+	UpdateMovementStraightSimple()
+	
+	D0 = u8[A0 + 0x29]
+	if (D0.u8 == 0)
+	{
+		Enemy.DrawDynamicObject()
+	}
+}
+
+function void mosquitronSpawnProjectile(u8 direction)
+{
+	playSound(0x4d)
+	
+	if direction == 0x00
+		spawnProjectileChildObject(0x086d4a, 0x00, -20, 20, -512, 512, 0x08c27e, 0x000000, 0x01ab52)
+	else
+		spawnProjectileChildObject(0x086d4a, 0x00, 20, 20, 512, 512, 0x08c27e, 0x000000, 0x01ab52)
+	
+}

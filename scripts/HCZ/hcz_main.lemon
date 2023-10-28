@@ -1,0 +1,64 @@
+include gembubble
+include balloon
+include hcz_fan
+
+function bool Standalone.onWriteToSpriteTable(s16 px, s16 py, u16 renderQueue)
+{	
+	if global.zone == 0x01
+	{
+		if global.act == 0x01
+		{
+			if (objA0.update_address == 0x02b962)
+			{
+				if (objA0.subtype2c == 0x06)
+				{
+					u8 frames =(level.framecounter >> 3) % 4
+					u64 key = stringformat("waterfall_%d", frames)
+					Renderer.drawCustomSprite(key, px, py, 0x00, 0, 0x1801, 0, 255)
+					return true
+				}
+			}
+			if (objA0.update_address == 0x03041a)
+			{
+				u8 frames =(level.framecounter >> 3) % 4
+				u64 key = stringformat("waterjet_%d", frames)
+				Renderer.drawCustomSprite(key, px, py, 0x00, 0, renderQueue, 0, 255)
+				return true	
+			}
+		}
+		if (objA0.update_address == 0x255060)
+		{
+			if (objA0.state != 0x01)
+			{	
+				u8 bubbleframes =(level.framecounter >> 2) % 8
+				u64 key = stringformat("gem_%d", bubbleframes)
+				Renderer.drawCustomSprite(key, px, py, 0x00, 0, renderQueue, 0, 255)
+				return true
+			}
+			if (objA0.state = 0x01)
+			{	
+				u8 bubbleframed =(level.framecounter >> 1) % 2 
+				u64 key = stringformat("gemdie_%d", bubbleframed)
+				Renderer.drawCustomSprite(key, px, py, 0x00, 0, renderQueue, 0, 255)
+				return true
+			}
+			return true
+		}
+		if (objA0.update_address == 0x035db2)
+		{
+			if (objA0.state != 0x01)
+			{	
+				u64 key = stringformat("balloon_%d", objA0.animation.sprite)
+				Renderer.drawCustomSprite(key, px, py, 0x00, 0, renderQueue, 0, 255)
+				return true
+			}
+			if (objA0.state = 0x01)
+			{	
+				Renderer.drawCustomSprite("balloon_7", px, py, 0x00, 0, renderQueue, 0, 255)
+				return true
+			}
+			return true
+		}
+	}
+	return base.Standalone.onWriteToSpriteTable(px, py, renderQueue)
+}

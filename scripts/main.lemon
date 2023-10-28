@@ -1,0 +1,145 @@
+global u8 UML.Fun	//Define the Global Values
+global u8 UML.TransitionCode	//0 = Null, 1 & 2 are Unused, 3 = Special code for Seven Force's camera locking so it isn't a pain in the arse
+
+//Define the majority of the includes
+
+include utilities/?
+
+include HCZ/?
+include MGZ/?
+include CNZ/?
+include FBZ/?
+include ICZ/?
+include SOZ/?
+include HPZ/chiba_cameo
+
+include sevenforce/?
+include sevenforce/bosses/?
+
+include fang/?
+
+function void initializeMainGame()
+{
+	global.random.seed = global.framecounter	//Determine Fun Value
+	GetRandomNumber()
+    D0.u8 &= 0xff
+	UML.Fun = D0.u8
+	
+	//System.writeDisplayLine(stringformat("fun value is 0x%02x", UML.Fun))
+	
+	// check for if the game thinks the act is icz 2 if loaded from level select. if it is
+	// then start the player at icz1 right near seven force
+	if (global.zone_act.apparent == 0x0501)
+	{
+		global.zone_act.apparent = 0x0500
+		global.zone_act = 0x0501
+		checkpoint.number = 1
+		checkpoint.zone_act = 0x0501
+		checkpoint.zone_act.apparent = 0x0500
+		checkpoint.camera.x = 0x02ae
+		checkpoint.camera.y = 0x038c
+		checkpoint.layer_flags = 0x0c0d
+		checkpoint.move_area.bottom = 0x1000
+		checkpoint.number = 0x06
+		checkpoint.number.backup = 0x06
+		checkpoint.sprite_attr = 0x0680
+		checkpoint.water.height = 0x983
+		checkpoint.x = 0x0380
+		checkpoint.y = 0x03ed
+		level.restart = 1
+	}
+	
+	base.initializeMainGame()
+
+	
+	
+	
+	// Check for if we are playing MGZ2 as Fang and Mighty, as loaded from the level select.
+	// If it is, set the Level Trigger Array to have its 13th entry set already,
+	// Which will activate a set of platforms exclusive to them.
+	if (global.zone_act.apparent == 0x0201)
+	{
+		if (u8[0xffffe654] == 1 || UML_IsFabFang())
+		{
+			u8[0xfffff7e0 + 0x0d] = 1	//ID 13 = Mighty & Fang platforms
+		}
+		//if (u8[0xffffe654] == 9)
+		//{
+		//	u8[0xfffff7e0 + 0x0e] = 1	//ID 14 = One platform added for Fang to prevent him from fighting himself (UNUSED)
+		//}
+	}
+}
+
+function void fn04f8f8()	//This function clears all switches; for MGZ2, we want it to clear all switches, and THEN trigger two switches if you are Mighty or Fang
+{
+	zeroMemory(0xfffff7e0, 0x20)
+	if (global.zone_act == 0x0201)
+	{
+		if (u8[0xffffe654] == 1 || UML_IsFabFang())
+		{
+			u8[0xfffff7e0 + 0x0d] = 1	//ID 13 = Mighty & Fang platforms
+		}
+
+		//if (u8[0xffffe654] == 9)
+		//{
+		//	u8[0xfffff7e0 + 0x0e] = 1	//ID 14 = One platform added for Fang to prevent him from fighting himself (UNUSED)
+		//}
+	}
+}
+
+// me when mydude (cringe)
+//# address-hook(0x01d57e) end(0x01d5d6)
+function void MonitorIntact.Init()
+{
+	if (!Renderer.hasCustomSprite(Monitor.getIconSpriteKey(objA0.subtype2c)))
+		objA0.subtype2c = Monitor.getRandomMonitorType(false)
+	base.MonitorIntact.Init()
+}
+
+// Audio stuff; Moved to its own file
+include audio
+
+// let there be chaos.
+function bool Standalone.onWriteToSpriteTable(s16 px, s16 py, u16 renderQueue)
+{
+	if (UML.Fun == 0x45)
+	{
+		u64 key = stringformat("bazel_0x%02x", (level.framecounter >> 2) % 2)
+		u8 flags = ((objA0.render_flags & 0x01) ? SPRITE_FLAG_FLIP_X : 0) | ((objA0.sprite_attributes & 0x8000) ? SPRITE_FLAG_PRIO : 0) | ((objA0.render_flags & render_flag.FLIP_Y) ? SPRITE_FLAG_FLIP_Y : 0)
+			
+		if (objA0.update_address == 0x01952a)
+			return true
+		
+		s32 scale_x = objA0.box_size.x * 0x2000
+		s32 scale_y = objA0.box_size.y * 0x2000
+		
+		if (objA0.box_size.x == 0)
+			scale_x = 0x10000
+		if (objA0.box_size.y == 0)
+			scale_y = 0x10000
+		
+		Renderer.drawSpriteTinted(key, px, py, 0x00, flags, renderQueue, u8[A0 + 0x26], 0xffffffff, scale_x, scale_y)
+		
+		
+		
+		
+		return true
+	}
+
+	return base.Standalone.onWriteToSpriteTable(px, py, renderQueue)
+}
+
+function void RenderHUD()
+{
+	if (UML.Fun == 0x45)
+	{
+		Renderer.drawSpriteTinted("endoftheworld", getScreenExtend() - 88, 0, 0x00, 0x40, 0xffff, 0, 0xffffffff, 0x10000, 0x10000)
+		return
+	}
+	base.RenderHUD()
+}
+
+function string ExtraChar.getCharacterName(u8 xtrachar)
+{
+	return base.ExtraChar.getCharacterName(xtrachar)
+}

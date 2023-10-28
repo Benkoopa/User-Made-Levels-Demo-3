@@ -1,0 +1,183 @@
+include anton
+include mosquitron
+include UFO
+
+//# address-hook(0x02b928) end(0x02b962)
+function void fn02b928()
+{
+	if objA0.subtype2c == 0x10 && global.zone == 0x02
+	{
+		objA0.render_flags = (render_flag.WORLD | render_flag.VISIBLE)
+		objA0.box_size.x = 0x800
+		objA0.box_size.y = 0x800
+		objA0.velocity.x = 0x00
+		objA0.velocity.y = 0x00
+		
+		objA0.collision_attributes = collision.size.12x36
+		
+		objA0.update_address = 0x02b962
+		fn02b962()
+	}
+	else if objA0.subtype2c == 0x11 && global.zone == 0x02
+	{
+		objA0.render_flags = 0x84
+		objA0.box_size.x = 0x80
+		objA0.box_size.y = 0x80
+		objA0.velocity.x = 0x00
+		objA0.velocity.y = 0x00
+		
+		if (objA0.render_flags & render_flag.FLIP_X)
+			objA0.value3b = true
+		
+		objA0.value3a = 40
+		
+		objA0.collision_attributes = collision.size.16x16
+		
+		objA0.update_address = 0x02b962
+		fn02b962()
+	}
+	else
+		base.fn02b928()
+}
+\
+//# address-hook(0x02b962) end(0x02b962)
+function void fn02b962()
+{
+	if objA0.subtype2c == 0x10 && global.zone == 0x02 && objA0.update_address == 0x02b962
+	{
+		update.anton()
+	}
+	if objA0.subtype2c == 0x11 && global.zone == 0x02 && objA0.update_address == 0x02b962
+	{
+		update.mosquitron()
+	}
+	if (objA0.subtype2c == 0x08 || objA0.subtype2c == 0x09) && global.zone == 0x02 && objA0.update_address == 0x02b962
+	{
+		update.UFO()
+	}
+	DrawOrUnloadObject()
+}
+
+function bool Standalone.onWriteToSpriteTable(s16 px, s16 py, u16 renderQueue)
+{
+	// This function gets called once when rendering an object, even if it consists of multiple VDP sprites
+	//  -> That is in contrast to e.g. "Standalone.onDrawVdpSprite" which gets called for each VDP sprite
+	//  -> So if an object's sprites should be replaced with a new loaded graphics, this here is the place to go
+
+	u8 gameMode = global.game_mode & 0x7f
+	bool prioFlag = (objA0.sprite_attributes & 0x8000) != 0
+
+	if (objA0.update_address == 0x02b962 && objA0.subtype2c == 0x10 && global.zone == 0x02)
+	{	
+		s16 offset.puff.x = 0x10
+		s16 offset.ride.y = (objA0.value26 == 0x00 ? 0x00 : objA0.value26 != 0x01 ? -0x01 : 0x01)
+		u8 anim = (objA0.position.x.u16 >> 2) % 4
+		if objA0.value32 > 0x09
+		{
+			offset.puff.x = 0x00
+			Renderer.drawCustomSprite("Anton_Badnik_Turnaround", px, py - 0x05, 0x00, objA0.render_flags, renderQueue, 0, 255)
+		}
+		else
+		{
+			if (objA0.render_flags & render_flag.FLIP_X)
+				offset.puff.x = -0x10
+			Renderer.drawCustomSprite(stringformat("Anton_Badnik_%d", anim+1), px, py - 0x05 - offset.ride.y, 0x00, objA0.render_flags, renderQueue, 0, 255)
+			anim = (objA0.position.x.u16 >> 2) % 2
+			Renderer.drawCustomSprite(stringformat("Anton_Wheel_%d", anim+1), px, py, 0x00, objA0.render_flags, renderQueue, 0, 255)
+		}
+		
+		if (level.framecounter) % 16 == 0
+			spawnAntonPuff(offset.puff.x)
+		return true
+	}
+	else if (objA0.update_address == 0x02b962 && objA0.subtype2c == 0x11 && global.zone == 0x02)
+	{	
+		u8 anim = (level.framecounter >> 1) % 2
+		if (level.framecounter & 0x01)
+		{
+			if objA0.base_state == 0x02
+				Renderer.drawCustomSprite(stringformat("Mosquitron_Fly_%d", anim+1), px, py, 0x00, objA0.render_flags, -0x6fff, 0, 255)
+			else
+				Renderer.drawCustomSprite(stringformat("Mosquitron_Fire_%d", anim+1), px, py, 0x00, objA0.render_flags, -0x6fff, 0, 255)
+		}
+		else
+		{
+			if objA0.base_state == 0x02
+				Renderer.drawCustomSprite("Mosquitron_Fly_3", px, py, 0x00, objA0.render_flags, -0x6fff, 0, 255)
+			else
+				Renderer.drawCustomSprite("Mosquitron_Fire_3", px, py, 0x00, objA0.render_flags, -0x6fff, 0, 255)
+		}
+		
+		return true
+	}
+	else if (objA0.update_address == 0x200072)
+	{	
+		u8 anim = ((0x28 - objA0.value32) >> 3) % 4
+		if objA0.value32 > 0x09 && level.framecounter & 0x01
+			Renderer.drawCustomSprite(stringformat("Anton_Smoke_%d", anim+1), px, py , 0x00, objA0.render_flags, renderQueue - 0x800, 0, 255)
+		return true
+	}
+	else if (objA0.update_address == 0x02b962 && (objA0.subtype2c == 0x09 || objA0.subtype2c == 0x08 || objA0.subtype2c == 0x07) && global.zone == 0x02)
+	{
+		u32 tint = 0xffffffff
+		
+		u32 scale = 0x8000
+		
+		s16 offset.y
+		
+		s16 offset.rq = renderQueue - 0x900
+		
+		if objA0.subtype2c == 0x08
+		{
+			scale = 0x10000
+			offset.rq = -0x6000
+		}
+		
+		if objA0.subtype2c == 0x07
+			offset.rq = renderQueue -0x100
+		else
+			offset.y = lookupSin(A0 + level.framecounter) >> 4
+		
+		u8 anim = (level.framecounter >> 2) % 16
+		u64 key = stringformat("UFO_%d", anim+1)
+		
+		Renderer.drawSpriteTinted(key, px, py + offset.y, 0, 0x00, offset.rq, 0x00, tint, scale, scale)
+		return true
+	}
+	else if objA0.update_address == 0x086d5e && global.zone == 0x02
+	{
+		u8 anim = (level.framecounter >> 1) % 2
+		Renderer.drawCustomSprite(stringformat("Mosquitron_Bullet_%d", anim+1), px, py, 0x00, objA0.render_flags, -0x6fff, 0, 255)
+		return true
+	}
+
+    return base.Standalone.onWriteToSpriteTable(px, py, renderQueue)
+}
+
+function void spawnAntonPuff(s16 offset.x)
+{
+	playSound(0x7d)
+	if (allocDynamicObjectStd())
+	{
+		objA1.update_address = 0x200072
+		objA1.render_flags = (render_flag.WORLD | render_flag.VISIBLE)
+		objA1.box_size.x = 0x40
+		objA1.box_size.y = 0x40
+		objA1.velocity.x = 0x00
+		objA1.velocity.y = -0x60
+		objA1.position.x.u16 = objA0.position.x.u16 + offset.x
+		objA1.position.y.u16 = objA0.position.y.u16 - 0x0d
+		objA1.value32 = 0x28
+	}
+}
+
+//# address-hook(0x200072)
+function void Puffs.Update()
+{
+	UpdateMovementStraightSimple()
+	objA0.velocity.y -= 0x06
+	--objA0.value32
+	DrawObject()
+	if objA0.value32 <= 0
+	UnloadObject()
+}

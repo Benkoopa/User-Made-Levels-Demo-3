@@ -1,0 +1,98 @@
+function void fn0511c8()	//This function loads in Marble Garden Zone Act 2
+{
+	base.fn0511c8()
+	if (UML_IsSawnicOrSludgles())	//Is this Sawnic?
+	{
+		A3 = 0xffff8008
+		A1 = 0xffff0000 + u16[A3]	//If so, patch the chunk layout to have a bunch of chunks changed up into Sawnic-specific chunksets
+		u8[A1 + 0x79] = 0x81
+		u8[A1 + 0x7A] = 0x50
+		u8[A1 + 0x7B] = 0x50
+		u8[A1 + 0x7C] = 0x50
+		u8[A1 + 0x7D] = 0x50
+		u8[A1 + 0x7E] = 0x50
+		u8[A1 + 0x7F] = 0x50
+
+		A1 = 0xffff0000 + u16[A3+4]
+		u8[A1 + 0x79] = 0x83
+		u8[A1 + 0x7A] = 0xB7
+		u8[A1 + 0x7B] = 0x4F
+		u8[A1 + 0x7C] = 0x4F
+		u8[A1 + 0x7D] = 0x52
+		u8[A1 + 0x7E] = 0x4A
+		u8[A1 + 0x7F] = 0x4A
+		
+		A1 = 0xffff0000 + u16[A3+8]
+		u8[A1 + 0x7A] = 0xBB
+		u8[A1 + 0x7B] = 0xBC
+		u8[A1 + 0x7C] = 0xBC
+		u8[A1 + 0x7D] = 0xBF
+	}
+}
+
+function void InitLevelTiles.MGZ2()
+{
+	if (UML_IsSawnicOrSludgles())	//Is this Sawnic?
+	{
+		A1 = 0xffff0000 + u16[A3]	//If so, patch the chunk layout to have a bunch of chunks changed up into Sawnic-specific chunksets
+		u8[A1 + 0x79] = 0x81
+		u8[A1 + 0x7A] = 0x50
+		u8[A1 + 0x7B] = 0x50
+		u8[A1 + 0x7C] = 0x50
+		u8[A1 + 0x7D] = 0x50
+		u8[A1 + 0x7E] = 0x50
+		u8[A1 + 0x7F] = 0x50
+
+		A1 = 0xffff0000 + u16[A3+4]
+		u8[A1 + 0x79] = 0x83
+		u8[A1 + 0x7A] = 0xB7
+		u8[A1 + 0x7B] = 0x4F
+		u8[A1 + 0x7C] = 0x4F
+		u8[A1 + 0x7D] = 0x52
+		u8[A1 + 0x7E] = 0x4A
+		u8[A1 + 0x7F] = 0x4A
+		
+		A1 = 0xffff0000 + u16[A3+8]
+		u8[A1 + 0x7A] = 0xBB
+		u8[A1 + 0x7B] = 0xBC
+		u8[A1 + 0x7C] = 0xBC
+		u8[A1 + 0x7D] = 0xBF
+	}
+	base.InitLevelTiles.MGZ2()
+}
+
+//ASM Version:
+//MGZ2_ScreenInit:
+//		cmpi.w	#3,(Player_mode).w	//Pretend #3 is Sawnic, not Knuckles
+//		bne.s	+
+//		movea.w (a3),a1	;Move the level layout into register A1
+//		add.w  #$79,a1	;Add $79 to it
+//		move.b  #$81,(a1)+
+//		move.b  #$50,(a1)+
+//		move.b  #$50,(a1)+
+//		move.b  #$50,(a1)+
+//		move.b  #$50,(a1)+
+//		move.b  #$50,(a1)+
+//		move.b  #$50,(a1)+
+//		movea.w 4(a3),a1	;Move the level layout into register A1
+//		add.w  #$79,a1	;Add $79 to it
+//		move.b  #$83,(a1)+
+//		move.b  #$B7,(a1)+
+//		move.b  #$4F,(a1)+
+//		move.b  #$4F,(a1)+
+//		move.b  #$52,(a1)+
+//		move.b  #$4A,(a1)+
+//		move.b  #$4A,(a1)+
+//		movea.w 8(a3),a1	;Move the level layout into register A1
+//		add.w  #$7A,a1	;Add $7A to it
+//		move.b  #$BB,(a1)+
+//		move.b  #$BC,(a1)+
+//		move.b  #$BC,(a1)+
+//		move.b  #$BF,(a1)+
+//+
+//		clr.l	($FFFFEEE2).w
+//		clr.l	($FFFFEEE6).w
+//		clr.w	($FFFFEEB4).w
+//		clr.w	($FFFFEEB8).w
+//		jsr	Reset_TileOffsetPositionActual(pc)
+//		jmp	Refresh_PlaneFull(pc)

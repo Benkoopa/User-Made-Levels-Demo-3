@@ -1,0 +1,99 @@
+function void update.anton()
+{
+	// Targets:
+	//  - 0x086e7e	-> objA0.base_state = 0x00
+	//  - 0x086ec4	-> objA0.base_state = 0x02
+	//  - 0x086eea	-> objA0.base_state = 0x04
+	//  - 0x086eee	-> objA0.base_state = 0x06
+	u32 address = tableLookupAddress(0x086e76, objA0.base_state)
+	if (address == 0x086e7e)
+	{
+		if (fn086e7e())
+			return
+	}
+	else
+	{
+		call address
+	}
+	fn085208()
+}
+
+//# address-hook(0x086ec4) end(0x086ee6)
+function void fn086ec4()
+{
+	if objA0.update_address != 0x02b962
+	{
+		base.fn086ec4()
+		return
+	}
+
+	A3 = 0x086f74
+	if (fn0870ca())
+	{
+		objA0.value32 = 0x10
+		return
+	}
+
+	objA0.velocity.x = s16[A0 + 0x40] * 0x10
+	
+	if objA0.value32 <= 0x00
+		UpdateMovementStraightSimple()
+	else
+		--objA0.value32
+
+	fn086ff8()
+	anton.check()
+}
+
+function void anton.check()
+{
+	bool goto087084 = false
+
+	D1 = 0
+	if (objA0.flags38 & 0x08)
+	{
+		if (objA0.flags38 & 0x04)
+		{
+			if (objA0.velocity.x <= 0x80)
+			{
+				D1 = 1
+			}
+		}
+		else if (objA0.velocity.x > 0x280)
+		{
+			D1 = 1
+		}
+		else
+		{
+			D1 = 2
+			if ((objA0.flags38 & 0x02) == 0)
+			{
+				objA0.flags38 |= 0x02
+				goto087084 = true
+			}
+		}
+	}
+	else
+	{
+		if ((objA0.flags38 & 0x04) == 0)
+		{
+			if (objA0.velocity.x > -0x80)
+			{
+				D1 = 1
+			}
+		}
+		else if (objA0.velocity.x <= -0x280)
+		{
+			D1 = 1
+		}
+		else
+		{
+			D1 = 2
+			if ((objA0.flags38 & 0x02) == 0)
+			{
+				objA0.flags38 |= 0x02
+				goto087084 = true
+			}
+		}
+	}
+}

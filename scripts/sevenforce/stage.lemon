@@ -1,0 +1,221 @@
+global u16 SevenForce.BGScroll
+//# address-hook(0x053ccc) end(0x053ccc)
+function void UpdateLevelTiles.ICZ2()
+{
+	RenderSevenForceHUD()
+	
+    if level.boss_encounter != 1
+    {
+		if (UML.TransitionCode != 0)
+		{
+			UML.TransitionCode = 0
+		}
+		base.UpdateLevelTiles.ICZ2()
+		return
+    }
+    
+	LoadTileContentDefault()
+
+    bool fulfilled
+
+    if level.boss_encounter == 1
+    { 
+		Game.setDiscordLargeImage("zone_unknown")
+        //move_area.bottom.target = 0x0388
+        level.bossarea.bottom = 0x0388
+        //move_area.bottom.current = 0x0388
+        if (UML_IsSawnicOrSludgles() && UML.TransitionCode != 3)
+        {
+            UML.TransitionCode = 3
+			move_area.top.target = 0x02b8
+			move_area.bottom.target = 0x02b8
+        }
+        else if (UML.TransitionCode != 3)
+        {
+			UML.TransitionCode = 3
+            move_area.top.target = 0x02a8
+            move_area.bottom.target = 0x02a8
+        }
+
+        fulfilled = (camera.position.y.u16 <= level.bossarea.bottom + 0x60)
+        level.vertical_wrap = camera.position.y.u16
+
+        if move_area.left <= 0x0600
+            move_area.left += 0x8
+    }
+	
+	Level.GetCameraPosition()
+	Level.InitialTilesFill()
+
+	// Easter Egg
+	Renderer.drawCustomSprite("kit_sit", 0x0868 - camera.position.x.u16, 0x0380 - camera.position.y.u16, 0x00, render_flag.WORLD | SPRITE_FLAG_PRIO, 0x9500)
+
+    if SevenForce.Phase == 3
+        Renderer.drawCustomSprite("DrillForce_Bar", 0x05f0 - camera.position.x.u16, 0x0300 - camera.position.y.u16, 0x00, render_flag.WORLD, 0x3333)
+
+    if SevenForce.Phase > 3 && SevenForce.FlashOpacity < 32 // bg after phase 4 (3 internally)
+    {
+		Renderer.enableDefaultPlane(1, false)
+		Renderer.enableDefaultPlane(3, false)
+		Renderer.enforceClearScreen(true)
+		
+		Renderer.drawCustomSprite("SevenForce_ScrollingBG", 0x2C0 - camera.position.x.u16 / 2, 0x300 - camera.position.y.u16 - SevenForce.BGScroll, 0x00, SPRITE_FLAG_PRIO, 0x4500)
+		
+        Renderer.drawCustomSprite("SevenForce_ScrollingWall", 0x606 - camera.position.x.u16, 0x300 - camera.position.y.u16 - SevenForce.BGScroll * 2, 0x00, SPRITE_FLAG_PRIO, 0x4502)
+        Renderer.drawCustomSprite("SevenForce_ScrollingWall", 0x830 + 0x4 - camera.position.x.u16, 0x300 - camera.position.y.u16 - SevenForce.BGScroll * 2, 0x00, SPRITE_FLAG_PRIO | SPRITE_FLAG_FLIP_X, 0x4502)
+        Renderer.drawCustomSprite("SevenForce_ScrollingWall", 0x602 - camera.position.x.u16, 0x380 - camera.position.y.u16 - SevenForce.BGScroll, 0x00, SPRITE_FLAG_PRIO, 0x4501)
+        Renderer.drawCustomSprite("SevenForce_ScrollingWall", 0x82b + 0x4 - camera.position.x.u16, 0x380 - camera.position.y.u16 - SevenForce.BGScroll, 0x00, SPRITE_FLAG_PRIO | SPRITE_FLAG_FLIP_X, 0x4501)
+		
+		A1 = 0xffffb000
+        SevenForceDrawPlat()
+		
+		A1 = 0xffffb04a
+		if (u32[A1] != 0)
+			SevenForceDrawPlat()
+
+		if !SevenForce.TriggerTitleTimer
+        	SevenForce.BGScroll += 6
+
+        if SevenForce.BGScroll > 512
+            SevenForce.BGScroll = 0
+    }
+}
+
+function void SevenForceDrawPlat()
+{
+	s16 platPy = 0x380
+	if ((objA1.flags2a & char.flag.IN_AIR) == 0 && (objA1.flags2a & char.flag.ON_OBJECT) == 0) && (A1 != 0xffffb000 || debug_mode.state == 0)
+		platPy = objA1.position.y.u16 + u8[A1 + 0x1e]
+	Renderer.drawCustomSprite("SevenForce_PlayerPlatform", objA1.position.x.u16, platPy, 0x00, (SPRITE_FLAG_PRIO | SPRITE_FLAG_WORLDSPACE), 0x4503)
+}
+
+function void Standalone.onResumeAfterPause()
+{
+	base.Standalone.onResumeAfterPause()
+	// clear planes when unpausing during bg segment
+	if (SevenForce.Phase > 3 && SevenForce.FlashOpacity < 32 && global.zone_act == 0x0501)
+	{
+		Renderer.enableDefaultPlane(1, false)
+		Renderer.enableDefaultPlane(3, false)
+		Renderer.enforceClearScreen(true)
+	}
+}
+
+//# address-hook(0x01a75c) end(0x01a7be)
+function void fn01a75c()
+{
+    if (SevenForce.Phase < 4 || SevenForce.FlashOpacity >= 32 && SevenForce.Phase == 4 || global.zone_act != 0x0501)
+    {
+        base.fn01a75c()
+        return
+    }
+	
+	if (Mods.isModActive("Lemons' Tweaks"))
+	{
+		fn01a75c_2()
+		return
+	}
+	
+	objA0.animation.sprite = spilled_rings.animframe
+	UpdateMovementStraightSimple()
+	objA0.velocity.y += 0x18 / 2
+	if (objA0.velocity.y >= 0)
+	{
+		D0.u8 = (global.framecounter + D7.u8) & 0x07
+		if (D0.u8 == 0)
+		{
+			if (spilled_rings.speed == 0)
+			{
+				// Time over for this ring, or it fell out of the lower level bounds
+				UnloadObject()
+				return
+			}
+		}
+	}
+	
+	if (objA0.velocity.x < 0)
+	{
+		if (objA0.position.x.u16 < 0x60e)
+		{
+			objA0.position.x.u16 = 0x60e
+			objA0.velocity.x = -objA0.velocity.x
+		}
+	}
+	else if (objA0.velocity.x > 0)
+	{
+		if (objA0.position.x.u16 > 0x823)
+		{
+			objA0.position.x.u16 = 0x823
+			objA0.velocity.x = -objA0.velocity.x
+		}
+	}
+	
+	s16 bottom = move_area.bottom.current + getScreenHeight() + 16
+	if (objA0.position.y.u16 >= bottom && objA0.velocity.y > 0)
+	{
+		objA0.position.y.u16 = bottom
+		objA0.velocity.y = -objA0.velocity.y
+	}
+	else if (objA0.position.y.u16 <= camera.position.y.u16 && objA0.velocity.y < 0)
+	{
+		objA0.position.y.u16 = camera.position.y.u16
+		objA0.velocity.y = -objA0.velocity.y
+	}
+
+	AddAsDynamicObject()
+	objA0.position.x.u16 -= u16[0xffffeebc]
+	DrawObject()
+}
+
+function void fn01a75c_2()
+{
+	// just spawned in? set values
+	// could do this in initalization, but i don't exactly feel like updating this mod for every function that replicates SpillRings()
+	if (u8[A0 + 0x37] == 0)
+	{
+		u16[A0 + 0x46] = u16[0xffffb000 + 0x46]
+		u8[A0 + 0x37] = 1
+		objA0.animation.timer = 0xff
+	}
+		
+	System.callFunctionByName("SpilledRing.updateAnimation")
+	UpdateMovementStraight()
+	objA0.velocity.y += 0x18 / 2
+	System.callFunctionByName("SpilledRing.checkCollisionObject")
+
+	// Get x-position (upper 16 bits = full pixel coordinate) after movement update
+	u16 px = (char.position.x + (s32(char.velocity.x) << 8)) >> 16
+
+	// Note: It might be tempting, but please do not use "getScreenWidth" to calculate rightBorder
+	//  -> Instead where move_area.right is set, modify it and possibly move_area.left as well
+	u16 leftBorder = move_area.left + 16
+	u16 rightBorder = move_area.right + 320 - 24
+	
+	if (objA0.velocity.x < 0)
+	{
+		if (objA0.position.x.u16 < 0x60e)
+		{
+			objA0.position.x.u16 = 0x60e
+			objA0.velocity.x = -objA0.velocity.x
+		}
+	}
+	else if (objA0.velocity.x > 0)
+	{
+		if (objA0.position.x.u16 > 0x823)
+		{
+			objA0.position.x.u16 = 0x823
+			objA0.velocity.x = -objA0.velocity.x
+		}
+	}
+
+	if (objA0.animation.timer == 0 || objA0.position.y.u16 > move_area.bottom.current + getScreenHeight())
+	{
+		// Time over for this ring, or it fell out of the lower level bounds
+		UnloadObject()
+		return
+	}
+
+	AddAsDynamicObject()
+	objA0.position.x.u16 -= u16[0xffffeebc]
+	DrawObject()
+}

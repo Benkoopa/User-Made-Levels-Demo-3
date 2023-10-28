@@ -1,0 +1,271 @@
+// Storm Force (3rd phase, butterfly)
+
+global u8 StormForce.State
+global u16 StormForce.StateTimer
+
+global u64 StormForce.Rotation
+global u64 StormForce.Scale
+
+global u8 StormForce.WingFrame
+
+global u16 StormForce.AttackTimer
+
+/* PF States
+0 = waiting to drop
+1 = dropping
+*/
+
+// Renderer
+function bool Standalone.onWriteToSpriteTable(s16 px, s16 py, u16 renderQueue)
+{
+    // Body
+    if (objA0.update_address == 0x21022E)
+    {
+        Renderer.drawCustomSprite(stringformat("StormForce_Body_%d", StormForce.WingFrame), px, py, 0, render_flag.WORLD | SPRITE_FLAG_FLIP_Y, renderQueue - 1005, StormForce.Rotation, 0xfffffffffff, StormForce.Scale)
+
+        if (SevenForce.HitFlashTimer)
+        {
+            if (level.framecounter.low & 0x01)
+            {
+                Renderer.drawCustomSprite("SevenForce_MainBody_Hit", px, py, 0, render_flag.WORLD | SPRITE_FLAG_PRIO, renderQueue - 1003, StormForce.Rotation, 255)
+                Renderer.drawCustomSprite("SevenForce_MainEye", px + SevenForce.EyeOffset, py, 0, render_flag.WORLD | SPRITE_FLAG_PRIO, renderQueue - 1002, StormForce.Rotation, 255)
+            }
+            else
+            {
+                Renderer.drawCustomSprite("SevenForce_MainBody", px, py, 0, render_flag.WORLD | SPRITE_FLAG_PRIO, renderQueue - 1003, StormForce.Rotation, 255)
+                Renderer.drawCustomSprite("SevenForce_MainEye_Hit", px + SevenForce.EyeOffset, py, 0, render_flag.WORLD | SPRITE_FLAG_PRIO, renderQueue - 1002, StormForce.Rotation, 255)
+            }
+
+            Renderer.drawCustomSprite("SevenForce_MainIris", px + SevenForce.EyeOffset * 2, py, 0, render_flag.WORLD | SPRITE_FLAG_PRIO, renderQueue - 1001, StormForce.Rotation, 255)
+            Renderer.drawCustomSprite("SevenForce_MainIrisShine", px + SevenForce.EyeOffset, py, 0, render_flag.WORLD | SPRITE_FLAG_PRIO, renderQueue - 1000, StormForce.Rotation, 255)
+        }
+        else
+        {
+            Renderer.drawCustomSprite("SevenForce_MainBody", px, py, 0, render_flag.WORLD | SPRITE_FLAG_PRIO, renderQueue - 1003, StormForce.Rotation, 255)
+            Renderer.drawCustomSprite("SevenForce_MainEye", px + SevenForce.EyeOffset, py, 0, render_flag.WORLD | SPRITE_FLAG_PRIO, renderQueue - 1002, StormForce.Rotation, 255)
+
+            Renderer.drawCustomSprite("SevenForce_MainIris", px + SevenForce.EyeOffset * 2, py, 0, render_flag.WORLD | SPRITE_FLAG_PRIO, renderQueue - 1001, StormForce.Rotation, 255)
+            Renderer.drawCustomSprite("SevenForce_MainIrisShine", px + SevenForce.EyeOffset, py, 0, render_flag.WORLD | SPRITE_FLAG_PRIO, renderQueue - 1000, StormForce.Rotation, 255)
+        }
+        return true
+    }
+
+    // Bullet
+    if (objA0.update_address == 0x210230)
+    {
+        if !(level.framecounter.low & 0x01)
+        {
+            Renderer.drawCustomSprite("StormForce_Bullet_0", px, py, 0, render_flag.WORLD, renderQueue - 1007, 0, 255)
+            Renderer.drawCustomSprite("BusterForce_Crosshair_1", px, 0x370 - camera.position.y.u16, 0, render_flag.WORLD | SPRITE_FLAG_PRIO, renderQueue - 1000, 0, 255)
+        }
+        else
+        {
+            Renderer.drawCustomSprite("StormForce_Bullet_1", px, py, 0, render_flag.WORLD, renderQueue - 1007, 0, 255)
+            Renderer.drawCustomSprite("BusterForce_Crosshair_0", px, 0x370 - camera.position.y.u16, 0, render_flag.WORLD | SPRITE_FLAG_PRIO, renderQueue - 1000, 0, 255)
+        }
+        return true
+    }
+
+    return base.Standalone.onWriteToSpriteTable(px, py, renderQueue)
+}
+
+function void StormForce.Intitalize()
+{   
+    if (allocDynamicObjectStd())
+    {
+        boss.remaining_hits = 8
+		StormForce.State = 0
+        StormForce.StateTimer = 180
+        StormForce.Rotation = 0
+        StormForce.Scale = 0
+        objA1.update_address = 0x21022E // storm force
+ 		objA1.mapping_offset = 0x01a99a
+		objA1.sprite_attributes = (sprite_attribute.PRIORITY | 0x06bc)
+		objA1.render_flags = render_flag.WORLD
+		objA1.sprite_priority = 0x100
+		objA1.hitbox_extends.x = 32
+		objA1.hitbox_extends.y = 32
+        objA1.position.y.u16 = objA0.position.y.u16
+        objA1.position.x.u16 = objA0.position.x.u16
+        objA1.box_size.x = 64
+        objA1.box_size.y = 64
+
+        StormForce.AttackTimer = 360
+
+        objA1.collision_attributes = collision.size.32x32
+
+        //playSound(0x7a)
+
+        SevenForce.HitFlashTimer = 0
+        SevenForce.Phase = 2
+    }
+}
+
+//#address-hook(0x21022E)
+function void StormForce.BaseUpdate()
+{
+    StormForce.HealthUpdater()
+    StormForce.StateMachine()
+    SevenForce.DirectionCheck()
+    SevenForce.StayInBoundary()
+    SevenForce.UpdateHitFlashing()
+
+    Enemy.DrawDynamicObject()
+
+	// set hovering stuff
+	objA0.value3e = 0xa0
+	s16[A0 + 0x40] = 0x08
+
+    if StormForce.Scale < 0xffff
+        StormForce.Scale += 0x400
+    else
+        StormForce.Scale = 0xffff
+
+    if StormForce.WingFrame == 3
+        StormForce.WingFrame = 0
+    
+    if !(level.framecounter.low & 0x03)
+        StormForce.WingFrame++
+
+    if Mods.isModActive("Bossbar") && (StormForce.State > 1) && (!SevenForce.FlashOpacity)
+    {
+        DrawBossHealthBar(0xe5, boss.remaining_hits, 8)
+    }
+}
+
+function void StormForce.HealthUpdater()
+{
+    if (objA0.collision_attributes != 0)
+        return
+
+    if (boss.remaining_hits == 0) && (!SevenForce.FlashOpacity)
+    {
+        SevenForce.Transform()
+
+        DrillForce.Intitalize()
+        UnloadObject()
+        return
+    }
+
+    if (objA0.state == 0) && (!SevenForce.FlashOpacity)
+    {
+        objA0.state = 0x20
+        playSound(0x6e)
+        objA0.flags2a |= 0x40
+        SevenForce.HitFlashTimer = 0x20
+    }
+
+    // code for hit flashing and other stuff here
+
+    --objA0.state
+    if (objA0.state == 0)
+    {
+        objA0.flags2a &= ~0x40
+        u8[A0 + 0x28] = u8[A0 + 0x25]
+    }
+}
+
+function void StormForce.StateMachine()
+{
+    UpdateMovementStraightSimple()
+    SevenForce.StudioTriggerMoment()
+
+    if StormForce.StateTimer
+        StormForce.StateTimer--
+
+    if StormForce.State == 0 // Init
+    {
+        boss.remaining_hits = 8
+        MoveWithGravity20()
+
+        if objA0.position.y.u16 >= 0x0360
+        {
+            StormForce.State = 1
+            objA0.velocity.y = 0x0
+            Audio.playAudio("gsh_impact", AudioContext.CONTEXT_SOUND)
+            camera.hyper_knux_shake = 0x0114
+        }
+    }
+    if StormForce.State == 1 // Fly up
+    {
+        if objA0.position.y.u16 <= 0x0300
+        {
+            StormForce.State = 2
+            objA0.velocity.y = 0x0
+            playSound(0x60)
+        }
+        else
+        {
+            objA0.velocity.y -= 0x08
+        }
+    }
+    if StormForce.State == 2 // main state
+    {
+        objA0.velocity.x += SevenForce.Direction ? 0x48 : -0x48
+
+        StormForce.Rotation = objA0.velocity.x / 128
+
+        if StormForce.AttackTimer
+            StormForce.AttackTimer--
+        else
+            StormForce.AttackTimer = 360
+
+        if (StormForce.AttackTimer == 130) || (StormForce.AttackTimer == 120) || (StormForce.AttackTimer == 110) || (StormForce.AttackTimer == 100) || (StormForce.AttackTimer == 90) || (StormForce.AttackTimer == 80) || (StormForce.AttackTimer == 70) || (StormForce.AttackTimer == 60) || (StormForce.AttackTimer == 50) || (StormForce.AttackTimer == 40) || (StormForce.AttackTimer == 30) || (StormForce.AttackTimer == 20) || (StormForce.AttackTimer == 10)
+        {
+            if StormForce.AttackTimer == 130
+                Audio.playAudio("gsh_transform", AudioContext.CONTEXT_SOUND)
+
+            spawnChildObject(0x210230, 0x00, 0, 0) // Bullet
+            objA1.mapping_offset = 0x01a99a
+            objA1.sprite_attributes = (sprite_attribute.PRIORITY | 0x06bc)
+            objA1.render_flags = render_flag.WORLD
+            objA1.sprite_priority = 0x100
+            objA1.hitbox_extends.x = 8
+            objA1.hitbox_extends.y = 8
+            objA1.collision_attributes = (collision.size.4x4 | collision.flag.THREAT)
+            objA1.state = 0
+            objA1.velocity.y = -0x600
+            objA1.subtype2c = 0x00
+            objA1.box_size.x = 8
+            objA1.box_size.y = 8
+            playSound(0x4d)
+        }
+    }
+}
+
+//#address-hook(0x210230)
+function void StormForce.Bullet.BaseUpdate()
+{
+    if !(level.framecounter.low & 0x03)
+    {
+        playSound(0x89)  
+    }
+
+    objA0.state += 1
+    SevenForce.ProjectileUnloader()
+
+    objA0.velocity.y += 70
+
+    Enemy.DrawDynamicObject()
+    UpdateMovementStraightSimple()
+    MoveWithGravity20()
+
+    if (objA0.state > 120)
+    {
+        UnloadObject()
+        return
+    }
+
+    if objA0.position.y.u16 > 0x0370
+    {
+        Audio.playAudio("gsh_explosion3", AudioContext.CONTEXT_SOUND)
+        camera.hyper_knux_shake = 0x0114
+		spawnSimpleChildObjects(0x083d84, 1)
+		if (_equal())
+		{
+			u8[A1 + 0x2c] = 0x06
+		}
+        UnloadObject()
+        return
+    }
+}

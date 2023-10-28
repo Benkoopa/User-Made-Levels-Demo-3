@@ -1,0 +1,44 @@
+/*
+
+Pogo Force (1st phase, pogo-stick)
+Roller Force (2nd phase, wheel)
+Storm Force (3rd phase, butterfly)
+Drill Force (4th phase, mining drill)
+Eagle Force (5th phase, eagle)
+Buster Force (6th phase, sword)
+Spider Force (7th phase, spider)
+
+*/
+
+/*
+
+0x210222 - Pogo Force Main Body
+0x210224 - Pogo Force Spike
+0x210226 - Pogo Force Shockwave
+
+0x210228 - Transform Effect
+
+0x21022A - Roller Force
+0x21022C - Roller Force Rock
+
+0x21022E - Storm Force
+0x210230 - Storm Force Bullet
+
+0x210232 - Drill Force
+0x210234 - Drill Force Spike
+0x210236 - Drill Force Rocket Drill
+0x210238 - Drill Force Rock Spawner
+
+0x21023A - Eagle Force
+0x21023C - Eagle Force Tail
+0x21023E - Eagle Force Bullet
+
+0x210240 - Buster Force
+0x210242 - Buster Force Nuke
+
+0x210244 - Spider Force
+0x210246 - Spider Force Bullet
+
+0x210248 - Defeated
+
+*/

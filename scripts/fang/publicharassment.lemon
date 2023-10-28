@@ -1,0 +1,179 @@
+global u8 Fang.FGState
+global u16 Fang.FGTimer
+global u8 Fang.FGOffset
+
+global u8 Fang.FGIconFrame
+global u8 Fang.FGIconTimer
+
+//# address-hook(0x0512be) end(0x0512d8)
+function void UpdateLevelTiles.MGZ2()
+{
+	base.UpdateLevelTiles.MGZ2()
+
+	if level.boss_encounter || camera.position.x.u16 < 0x1600 || camera.position.x.u16 > 0x3d0c || u8[0xffffE654] == 9
+	{
+		Fang.FGTimer = 0
+		Fang.FGState = 0
+	}
+
+	Fang.FGTimer++
+
+	Fang.FGIconTimer++
+
+	if (Fang.FGIconTimer == 5)
+	{
+		Fang.FGIconTimer = 0
+		Fang.FGIconFrame++
+	}
+
+	if (Fang.FGIconFrame > 5)
+	{
+		Fang.FGIconTimer = 0
+		Fang.FGIconFrame = 0
+	}
+
+	if (Fang.FGTimer == 1200)
+	{
+		if Fang.FGState
+		{
+			Fang.FGTimer = 0
+			Fang.FGState = 0
+		}
+		else
+		{
+			Fang.FGTimer = 240
+			Fang.FGState = 1
+		}
+	}
+
+	if Fang.FGState
+	{
+		if Fang.FGOffset != 0
+			Fang.FGOffset--
+
+		if (Fang.FGTimer == 360) || (Fang.FGTimer == 610) || (Fang.FGTimer == 860)
+		{
+			playSound(0x9d)
+			if (allocDynamicObjectStd())
+			{
+				objA1.position.x.u16 = objA0.position.x.u16
+				objA1.position.y.u16 = 0x00b0
+				objA1.box_size.x = 56
+				objA1.box_size.y = 56
+
+				objA1.update_address = 0x260272 // Fang (Phase 2)
+				objA1.mapping_offset = 0x01a99a
+				objA1.sprite_attributes = (sprite_attribute.PRIORITY | 0x06bc)
+				objA1.render_flags = render_flag.WORLD
+				objA1.sprite_priority = 0x100
+			}
+		}
+	}
+	else
+	{
+		if Fang.FGOffset != 64
+			Fang.FGOffset++
+	}
+
+	if Fang.FGState && Fang.FGTimer > 360 && Fang.FGTimer < 1100
+	{
+		if (level.framecounter.low & 0x01)
+			HUD.drawSprite("Fang_Foreground_Aim_0", getScreenWidth(), getScreenHeight() + Fang.FGOffset, 0xd001)
+		else
+			HUD.drawSprite("Fang_Foreground_Aim_1", getScreenWidth(), getScreenHeight() + Fang.FGOffset, 0xd001)
+	}
+	else
+	{
+		if (level.framecounter.low & 0x01)
+			HUD.drawSprite("Fang_Foreground_Fly_0", getScreenWidth(), getScreenHeight() + Fang.FGOffset, 0xd001)
+		else
+			HUD.drawSprite("Fang_Foreground_Fly_1", getScreenWidth(), getScreenHeight() + Fang.FGOffset, 0xd001)
+	}
+}
+
+//# address-hook(0x0512a6) end(0x0512ba)
+function void InitLevelTiles.MGZ2()
+{
+	base.InitLevelTiles.MGZ2()
+
+	Fang.FGState = 0
+	Fang.FGTimer = 0
+	Fang.FGOffset = 64
+	isFangEncounter = false
+}
+
+//#address-hook(0x260272)
+function void Fang.FGShooting.BaseUpdate()
+{
+	if level.boss_encounter || camera.position.x.u16 < 0x1600 || camera.position.x.u16 > 0x3d0c	|| u8[0xffffE654] == 9 //If this is a boss encounter (or you you are in, or past, the Boss Arena), unload
+	{
+        UnloadObject()
+        return
+	}
+
+	if (objA0.state > 140)
+	{
+		if !(level.framecounter.low & 0x03)
+		{
+			playSound(0x89)  
+		}
+	}
+	else
+	{
+		A1 = 0xffffb000
+		objA0.position.x.u16 = objA1.position.x.u16
+		objA0.position.y.u16 = objA1.position.y.u16
+	}
+
+    objA0.state += 1
+
+    Enemy.DrawDynamicObject()
+    UpdateMovementStraightSimple()
+
+    if (objA0.state > 190)
+    {
+		playSound(0x4d)
+		spawnChildObject(0x260274, 0x00, 0x00, 0x00)
+		objA1.mapping_offset = 0x01a99a
+		objA1.sprite_attributes = (sprite_attribute.PRIORITY | 0x06bc)
+		objA1.render_flags = render_flag.WORLD
+		objA1.sprite_priority = 0x100
+		objA1.hitbox_extends.x = 8
+		objA1.hitbox_extends.y = 8
+		objA1.collision_attributes = (collision.size.4x4 | collision.flag.THREAT)
+		objA1.state = 0
+		objA1.velocity.x = 0
+		objA1.velocity.y = 0
+		objA1.box_size.x = 8
+		objA1.box_size.y = 8
+
+		spawnSimpleChildObjects(0x083d84, 1)
+		if (_equal())
+		{
+			u8[A1 + 0x2c] = 0x06
+		}
+        UnloadObject()
+        return
+    }
+}
+
+//#address-hook(0x260274)
+function void Fang.FGBlast.BaseUpdate()
+{
+	if level.boss_encounter || camera.position.x.u16 < 0x1600 || camera.position.x.u16 > 0x3d0c || u8[0xffffE654] == 9
+	{
+        UnloadObject()
+        return
+	}
+
+	objA0.state += 1
+
+    Enemy.DrawDynamicObject()
+    UpdateMovementStraightSimple()
+
+    if (objA0.state > 5)
+    {
+        UnloadObject()
+        return
+    }
+}
