@@ -1,0 +1,37 @@
+{
+
+	//----------------------------------------------//
+	// Music and jingles                            //
+	//----------------------------------------------//
+
+	// Seven Force
+	"7force":      { "File": "SevenForce_Lunar.ogg", "Type": "Music", "LoopStart": "1", "Name": "Seven Force's Theme (User Made Levels)"},
+	"7force_gh":      { "File": "SevenForce_GunstarHeroes.ogg", "Type": "Music", "LoopStart": "3138513", "Name": "Seven Force's Theme (Gunstar Heroes)"},
+	"7force_as":	{ "File": "SevenForce_AlienSoldier.ogg", "Type": "Music", "LoopStart": "3954897", "Name": "Seven Force's Theme (Alien Soldier)" },
+	
+	"stageclear_gh":	{ "File": "StageClear_GunstarHeroes.ogg", "Type": "Jingle", "Name": "Stage Clear Theme (Gunstar Heroes)"},
+
+	"gsh_impact":	{ "File": "SevenForce/SFX/Impact.ogg", "Type": "Sound"},
+	"gsh_impact2":	{ "File": "SevenForce/SFX/Impact2.ogg", "Type": "Sound"},
+	"gsh_transform":	{ "File": "SevenForce/SFX/Transform.ogg", "Type": "Sound"},
+	"gsh_move":	{ "File": "SevenForce/SFX/Move.ogg", "Type": "Sound"},
+	"gsh_strain":	{ "File": "SevenForce/SFX/Strain.ogg", "Type": "Sound"},
+	"gsh_explosion1":	{ "File": "SevenForce/SFX/Explosion1.ogg", "Type": "Sound"},
+	"gsh_explosion2":	{ "File": "SevenForce/SFX/Explosion2.ogg", "Type": "Sound"},
+	"gsh_explosion3":	{ "File": "SevenForce/SFX/Explosion3.ogg", "Type": "Sound", "Channel": "GSH"},
+	"gsh_warning":	{ "File": "SevenForce/SFX/Warning.ogg", "Type": "Sound"},
+	"gsh_roll":	{ "File": "SevenForce/SFX/Roll.ogg", "Type": "Sound", "Channel": "GSH"},
+	"gsh_grind":	{ "File": "SevenForce/SFX/Grind.ogg", "Type": "Sound", "Channel": "GSH"},
+
+	// Fang
+	"fang_f":	{ "File": "Fang_F.ogg", "Type": "Music", "LoopStart": "280879", "Name": "Sonic Triple Trouble (16-Bit): Fang Theme"},
+	"fang_b":	{ "File": "Fang_B.ogg", "Type": "Music", "LoopStart": "189747", "Name": "Sonic Triple Trouble (16-Bit): Boss Theme"},
+	
+	// Extra Life
+	"confrontingyourself":{ "File": "confrontingyourself.ogg", "Type": "Music", "Name": "Confronting Yourself - Differentopic"},
+	"confrontingyourself_fast":{ "File": "confrontingyourself_F.ogg", "Type": "Music", "Name": "Confronting Yourself - Differentopic"},
+	
+	// uh oh
+	"mazel":	{ "File": "mazel.ogg", "Type": "Music", "LoopStart": "112551", "Name": "???"},
+	"render_flag.FLIP_X":	{ "File": "mirror.ogg", "Type": "Music", "LoopStart": "1085801", "Name": "render_flag.FLIP_X - LunarCryptik"},
+}
